@@ -22,7 +22,7 @@ const PartDetail: React.FC<PartDetailProps> = ({ partId }) => {
       const b = axiosClient.defaults.baseURL || '';
       return b.replace(/\/api\/?$/, '');
     } catch (e) {
-      return 'http://127.0.0.1:8000';
+      return (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api').replace(/\/api\/?$/, '');
     }
   })();
 

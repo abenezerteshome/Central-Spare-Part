@@ -14,5 +14,8 @@ php artisan view:cache || true
 # Run database migrations automatically against Neon Postgres
 php artisan migrate --force || true
 
+# Seed the admin user (safe - uses firstOrCreate, won't duplicate)
+php artisan db:seed --class=AdminUserSeeder --force || true
+
 # Start Apache in foreground
 exec apache2-foreground

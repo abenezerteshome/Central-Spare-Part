@@ -12,7 +12,7 @@ import {
   FiZap 
 } from "react-icons/fi";
 
-const API_URL = "http://127.0.0.1:8000/api/";
+const API_URL = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api").replace(/\/?$/, "/");
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
