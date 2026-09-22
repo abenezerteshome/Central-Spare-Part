@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    'paths' => ['*'],
     'allowed_methods' => ['*'],
     'allowed_origins' => array_filter(array_merge(
         ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:9999'],
