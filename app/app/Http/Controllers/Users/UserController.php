@@ -21,12 +21,20 @@ use Illuminate\Support\Facades\DB;
 use Exception;
 class UserController extends Controller
 {
-    protected $auth;
+    protected $auth = null;
 
     public function __construct()
     {
-        $firebasePath = config('firebase.credentials'); // Full path to JSON
-        $projectId = config('firebase.project_id');
+        // Firebase is initialized lazily via getFirebaseAuth()
+        // so routes that don't need Firebase (e.g. adminLogin) won't crash
+    }
+
+    protected function getFirebaseAuth()
+    {
+        if ($this->auth) return $this->auth;
+
+        $firebasePath = config('firebase.credentials');
+        $projectId    = config('firebase.project_id');
 
         if (!$firebasePath || !file_exists($firebasePath)) {
             throw new \Exception("Firebase credentials file not found at: $firebasePath");
@@ -36,6 +44,8 @@ class UserController extends Controller
             ->withServiceAccount($firebasePath)
             ->withProjectId($projectId)
             ->createAuth();
+
+        return $this->auth;
     }
 
 
@@ -107,13 +117,13 @@ class UserController extends Controller
             $firebaseUser = null;
     
             if ($request->email) {
-                $firebaseUser = $this->auth->createUserWithEmailAndPassword(
+                $firebaseUser = $this->getFirebaseAuth()->createUserWithEmailAndPassword(
                     $request->email,
                     $request->password
                 );
             } elseif ($request->phone) {
                 // Optional: create Firebase user via phone, or handle manually
-                $firebaseUser = $this->auth->createUser([
+                $firebaseUser = $this->getFirebaseAuth()->createUser([
                     'phoneNumber' => $request->phone,
                 ]);
             }
@@ -200,7 +210,7 @@ class UserController extends Controller
     
         try {
             // 2. Verify the Google ID token with Firebase
-            $verifiedIdToken = $this->auth->verifyIdToken($request->id_token);
+            $verifiedIdToken = $this->getFirebaseAuth()->verifyIdToken($request->id_token);
             $uid = $verifiedIdToken->claims()->get('sub');
     
             // 3. Find the user or create a new one if they don't exist
@@ -248,7 +258,7 @@ class UserController extends Controller
 
         try {
             // 2. Ask Firebase to verify the email and password
-            $signInResult = $this->auth->signInWithEmailAndPassword($request->email, $request->password);
+            $signInResult = $this->getFirebaseAuth()->signInWithEmailAndPassword($request->email, $request->password);
 
             // 3. If successful, get the user's unique Firebase ID (UID)
             $firebaseUid = $signInResult->firebaseUserId();
@@ -406,7 +416,7 @@ class UserController extends Controller
         try {
             // 2. IMPORTANT: Delete the user from Firebase Authentication first
             if ($user->firebase_uid) {
-                $this->auth->deleteUser($user->firebase_uid);
+                $this->getFirebaseAuth()->deleteUser($user->firebase_uid);
             }
 
             // 3. If Firebase deletion is successful, delete the user from the local database
