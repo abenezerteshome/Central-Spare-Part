@@ -8,8 +8,8 @@ const PartsListPage: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <div className="p-4">
-        <h1 className="text-xl font-semibold mb-4">Parts</h1>
+      <div className="min-w-0 p-4 sm:p-6">
+        <h1 className="mb-4 text-xl font-semibold">Parts</h1>
         <PartList onEdit={(id) => navigate(`/dashboard/parts/edit/${id}`)} />
       </div>
     </DashboardLayout>

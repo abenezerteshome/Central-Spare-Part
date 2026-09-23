@@ -42,7 +42,7 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
   } as const;
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white/70 px-4 shadow-sm backdrop-blur-md">
+    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white/70 px-3 shadow-sm backdrop-blur-md sm:px-4">
       {/* --- Mobile Menu Toggle --- */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -62,7 +62,7 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
       </div>
 
       {/* --- Right Side Actions --- */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 sm:gap-4">
         <button className="relative text-gray-500 hover:text-purple-600">
           <FiBell size={20} />
           {/* Notification Dot */}

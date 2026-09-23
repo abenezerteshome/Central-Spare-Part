@@ -161,7 +161,7 @@ export default function PartList({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       {/* Top action bar */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
         <div className="relative w-full xl:max-w-xl group">
@@ -175,7 +175,7 @@ export default function PartList({
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 xl:w-auto">
           <button
             type="button"
             onClick={handleRefresh}
@@ -214,7 +214,7 @@ export default function PartList({
 
       {/* Loading Skeleton */}
       {loading && (
-        <div className="bg-white border border-slate-200 rounded-2xl overflow-x-auto shadow-sm">
+        <div className="min-w-0 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="h-1 bg-blue-500 animate-pulse" />
           <div className="p-4 space-y-3">
             {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -235,7 +235,7 @@ export default function PartList({
 
       {/* Data Table */}
       {!loading && (
-        <div className="bg-white border border-slate-200 rounded-2xl overflow-x-auto shadow-sm">
+        <div className="min-w-0 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="min-w-[980px]">
             {/* Table Header */}
             <div className="sticky top-0 z-10 grid grid-cols-[50px_minmax(180px,1.2fr)_100px_110px_120px_85px_130px_110px] items-center gap-3 px-4 py-3.5 bg-slate-50 border-b border-slate-200 text-[11px] font-black uppercase tracking-widest text-slate-400">

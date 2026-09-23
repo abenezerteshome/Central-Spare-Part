@@ -20,7 +20,7 @@ const DashboardLayout: React.FC<Props> = ({ children }) => {
   }, []);
 
   return (
-    <div className="flex h-screen bg-gray-100 relative">
+    <div className="relative flex h-screen min-w-0 max-w-full overflow-hidden bg-gray-100">
       {/* 2. We pass the state down to the Sidebar */}
       <Sidebar isOpen={sidebarOpen} />
 
@@ -32,11 +32,11 @@ const DashboardLayout: React.FC<Props> = ({ children }) => {
         ></div>
       )}
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {/* 3. We pass the state AND the function to change it down to the Navbar */}
         <Navbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
         
-        <main className="p-0 flex-1 overflow-y-auto pb-24 md:pb-0">
+        <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto pb-24 md:pb-0">
           {children}
         </main>
       </div>

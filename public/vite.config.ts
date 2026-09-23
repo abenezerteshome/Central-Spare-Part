@@ -18,6 +18,7 @@ export default defineConfig({
     }),
   ],
   server: {
+    allowedHosts: ['.ngrok-free.dev'],
     proxy: {
       // Proxy /api requests to the backend to avoid CORS in local development
       '/api': {
