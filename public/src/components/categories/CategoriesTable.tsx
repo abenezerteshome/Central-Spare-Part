@@ -6,12 +6,13 @@ import { useToast  } from '../../hooks/useToast';
 
 interface CategoriesTableProps {
   categories: any; // can be array or paginated object { data: [...] }
+  loading?: boolean;
   onEdit: (category: any) => void;
   onRefresh?: () => void;
 }
 
 
-const CategoriesTable: React.FC<CategoriesTableProps> = ({ categories, onEdit, onRefresh }) => {
+const CategoriesTable: React.FC<CategoriesTableProps> = ({ categories, loading = false, onEdit, onRefresh }) => {
   const { mutate: deleteCategory } = useMutation(
     (id: string) => `${endpoints.CATEGORIES.DELETE(id)}`,
     'delete'
@@ -36,6 +37,10 @@ const CategoriesTable: React.FC<CategoriesTableProps> = ({ categories, onEdit, o
 
   // Normalize categories to an array and handle empty state
   const list = Array.isArray(categories) ? categories : Array.isArray(categories?.data) ? categories.data : [];
+
+  if (loading) {
+    return <div className="mt-4 space-y-3">{Array.from({ length: 5 }).map((_, index) => <div key={index} className="h-12 animate-pulse rounded-lg bg-gray-200" />)}</div>;
+  }
 
   if (!list.length) {
     return (

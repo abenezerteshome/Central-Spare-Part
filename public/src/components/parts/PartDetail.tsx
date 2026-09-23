@@ -28,9 +28,9 @@ const PartDetail: React.FC<PartDetailProps> = ({ partId }) => {
 
   const getImageUrl = (img: any) => {
     if (!img) return '';
-    if (img.file_path) return `${storageBase}/storage/${img.file_path}`;
+    if (img.thumb_url || img.url) return img.thumb_url || img.url;
     if (img.thumb_path) return `${storageBase}/storage/${img.thumb_path}`;
-    if (img.url) return img.url;
+    if (img.file_path) return `${storageBase}/storage/${img.file_path}`;
     if (img.path) return `${storageBase}/${img.path}`;
     return '';
   };

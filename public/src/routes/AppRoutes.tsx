@@ -1,7 +1,9 @@
 // src/routes/AppRoutes.tsx
 import { Routes, Route } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
+import NavigationLoader from './NavigationLoader';
 import { Suspense, lazy } from 'react';
+import Loader from '../components/Loader';
 
 // Auth Pages (keep small auth pages eager)
 import SignIn from '../pages/AuthPages/SignIn';
@@ -31,8 +33,10 @@ import BrandsForm from '../components/brands/BrandsForm';
 
 const AppRoutes = () => {
   return (
-    <Suspense fallback={<div className="p-8">Loading...</div>}>
-      <Routes>
+    <>
+      <NavigationLoader />
+      <Suspense fallback={<Loader />}>
+        <Routes>
         {/* Public Routes */}
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
@@ -193,10 +197,10 @@ const AppRoutes = () => {
           }
         />
         <Route path="*" element={<SignIn />} />
-      </Routes>
-    </Suspense>
+        </Routes>
+      </Suspense>
+    </>
   );
 };
 
 export default AppRoutes;
-

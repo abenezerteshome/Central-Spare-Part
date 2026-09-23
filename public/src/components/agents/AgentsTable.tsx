@@ -14,11 +14,12 @@ interface Agent {
 
 interface AgentsTableProps {
   agents: any; // can be array or object with .data
+  loading?: boolean;
   onEdit: (agent: Agent) => void;
   onRefresh?: () => void;
 }
 
-const AgentsTable: React.FC<AgentsTableProps> = ({ agents, onEdit, onRefresh }) => {
+const AgentsTable: React.FC<AgentsTableProps> = ({ agents, loading = false, onEdit, onRefresh }) => {
   const { mutate: deleteAgent } = useMutation((id: string) => `${endpoints.AGENTS.DELETE(id)}`, 'delete');
   const toast = useToast();
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -43,6 +44,10 @@ const AgentsTable: React.FC<AgentsTableProps> = ({ agents, onEdit, onRefresh }) 
       toast.error('Failed to delete agent.');
     }
   };
+
+  if (loading) {
+    return <div className="space-y-3">{Array.from({ length: 5 }).map((_, index) => <div key={index} className="h-16 animate-pulse rounded-lg bg-gray-200" />)}</div>;
+  }
 
   if (!agentList.length) {
     return <div className="text-center text-gray-500 mt-4">No agents found.</div>;

@@ -8,8 +8,14 @@ import { useNavigate } from 'react-router-dom';
 
 
 const MyPartsPage: React.FC = () => {
-  const { data: agentsData } = useFetch(endpoints.AGENTS.LIST);
-  const { data: categoriesData } = useFetch(endpoints.CATEGORIES.LIST);
+  const { data: agentsData, loading: agentsLoading } = useFetch(endpoints.AGENTS.LIST, [], {
+    cacheKey: 'reference:agents',
+    keepPreviousData: true,
+  });
+  const { data: categoriesData, loading: categoriesLoading } = useFetch(endpoints.CATEGORIES.LIST, [], {
+    cacheKey: 'reference:categories',
+    keepPreviousData: true,
+  });
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [search] = useState('');
   const [categoryId, setCategoryId] = useState<string | null>(null);
@@ -40,6 +46,7 @@ const MyPartsPage: React.FC = () => {
           <label className="text-sm text-gray-600">Agent</label>
           <select
             value={selectedAgent || ''}
+            disabled={agentsLoading}
             onChange={(e) => {
               const v = e.target.value || null;
               setSelectedAgent(v);
@@ -47,7 +54,7 @@ const MyPartsPage: React.FC = () => {
             }}
             className="border px-3 py-2 rounded"
           >
-            <option value="">ALL</option>
+            <option value="">{agentsLoading ? 'Loading agents...' : 'ALL'}</option>
             {agentsData?.data?.data?.map((a: any) => (
               <option key={a.id} value={a.id}>{a.name}</option>
             ))}
@@ -59,10 +66,11 @@ const MyPartsPage: React.FC = () => {
           <label className="text-sm text-gray-600">Category</label>
           <select
             value={categoryId || ''}
+            disabled={categoriesLoading}
             onChange={(e) => setCategoryId(e.target.value || null)}
             className="border px-3 py-2 rounded"
           >
-            <option value="">ALL</option>
+            <option value="">{categoriesLoading ? 'Loading categories...' : 'ALL'}</option>
             {categoriesData?.data?.data?.map((c: any) => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}

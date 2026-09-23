@@ -9,7 +9,10 @@ import AgentsForm from '../../components/agents/AgentsForm';
 import AgentsTable from '../../components/agents/AgentsTable';
 
 const AgentsPage: React.FC = () => {
-  const { data: agents, refetch } = useFetch(endpoints.AGENTS.LIST);
+  const { data: agents, refetch, loading } = useFetch(endpoints.AGENTS.LIST, [], {
+    cacheKey: 'reference:agents',
+    keepPreviousData: true,
+  });
   const [editingAgent, setEditingAgent] = useState<any>(null);
   //const toast = useToast();
   const handleEdit = (agent: any) => setEditingAgent(agent);
@@ -25,7 +28,7 @@ const AgentsPage: React.FC = () => {
             setEditingAgent(null);
           }}
         />
-        <AgentsTable agents={agents?.data || []} onEdit={handleEdit} onRefresh={refetch} />
+        <AgentsTable loading={loading} agents={agents?.data || []} onEdit={handleEdit} onRefresh={refetch} />
       </div>
     </DashboardLayout>
   );

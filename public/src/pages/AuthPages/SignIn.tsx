@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { useToast } from '../../hooks/useToast';
 import { motion } from 'framer-motion';
 import { FiEye, FiEyeOff, FiZap, FiSettings, FiLock, FiMail } from 'react-icons/fi';
 import Particles from 'react-particles';
@@ -13,7 +12,6 @@ const SignIn: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { login, user, loading: authLoading } = useAuth();
-  const { error } = useToast();
 
   const particlesInit = async () => {
     return Promise.resolve();
@@ -21,12 +19,8 @@ const SignIn: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await login(email, password);
-      navigate('/dashboard', { replace: true });
-    } catch (err: any) {
-      error(err?.message || 'Identity verification failed.');
-    }
+    await login(email, password);
+    navigate('/dashboard', { replace: true });
   };
 
   useEffect(() => {

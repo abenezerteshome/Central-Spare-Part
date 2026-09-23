@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { 
   FiSearch, FiEdit3, FiTrash2, FiMaximize2, FiMinimize2,
   FiPackage, FiLayers, FiHash, FiInfo, FiImage, FiX, FiEye, FiRefreshCw,
-  FiUser, FiArchive, FiMapPin, FiPhone
+  FiUser, FiArchive, FiMapPin, FiPhone, FiCalendar
 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import { useFetch } from "../../hooks/useFetch";
@@ -11,6 +11,7 @@ import { endpoints } from "../../api/endpoints";
 import axiosClient from "../../api/axiosClient";
 import { useToast } from "../../hooks/useToast";
 import { useAgent } from "../../context/AgentContext";
+import RequestError from "../RequestError";
 
 interface PartListProps {
   onEdit: (id: string) => void;
@@ -50,7 +51,7 @@ export default function PartList({
     return endpoints.PARTS.LIST + (params.toString() ? `?${params.toString()}` : "");
   }, [effectiveAgentId, categoryId, status, initialMine]);
 
-  const { data: parts, refetch, loading } = useFetch(url);
+  const { data: parts, refetch, loading, refreshing, error } = useFetch(url);
   const { mutate: deletePart } = useMutation(endpoints.PARTS.DELETE, "delete");
 
   const partsList = useMemo(() => parts?.data?.data || [], [parts]);
@@ -138,9 +139,12 @@ export default function PartList({
 
   const getImageUrl = (img: any) => {
     if (!img) return null;
+    if (img.thumb_url || img.url) return img.thumb_url || img.url;
     const base = axiosClient.defaults.baseURL?.replace(/\/api\/?$/, '') || window.location.origin;
     const path = img.thumb_path || img.file_path;
-    return path ? `${base}/storage/${path}` : img.url || null;
+    if (!path) return null;
+    if (/^https?:\/\//i.test(path)) return path;
+    return `${base}/storage/${String(path).replace(/^\/?storage\//, '').replace(/^\/+/, '')}`;
   };
 
   const parseSpecs = (specs: any) => {
@@ -158,6 +162,17 @@ export default function PartList({
   const formatMoney = (value: any) => {
     const num = Number(value || 0);
     return `${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Birr`;
+  };
+
+  const formatRegisteredDate = (value: any) => {
+    if (!value) return "Unknown";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Unknown";
+    return new Intl.DateTimeFormat(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    }).format(date);
   };
 
   return (
@@ -214,12 +229,22 @@ export default function PartList({
 
       {/* Loading Skeleton */}
       {loading && (
-        <div className="min-w-0 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div
+          className="min-w-0 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm"
+          role="status"
+          aria-live="polite"
+          aria-label="Loading parts"
+        >
           <div className="h-1 bg-blue-500 animate-pulse" />
-          <div className="p-4 space-y-3">
+          <div className="flex items-center justify-center gap-2 border-b border-slate-100 px-4 py-3 text-sm font-bold text-slate-500">
+            <FiRefreshCw size={16} className="animate-spin text-blue-500" />
+            Loading parts...
+          </div>
+          <div className="min-w-[1100px] space-y-3 p-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="grid grid-cols-[50px_minmax(180px,1.2fr)_100px_110px_120px_85px_130px_110px] gap-3 items-center">
+              <div key={i} className="grid grid-cols-[50px_minmax(180px,1.2fr)_100px_110px_120px_85px_130px_125px_110px] gap-3 items-center">
                 <div className="h-10 w-10 bg-slate-100 animate-pulse rounded-lg" />
+                <div className="h-4 bg-slate-100 animate-pulse rounded" />
                 <div className="h-4 bg-slate-100 animate-pulse rounded" />
                 <div className="h-4 bg-slate-100 animate-pulse rounded" />
                 <div className="h-4 bg-slate-100 animate-pulse rounded" />
@@ -233,12 +258,24 @@ export default function PartList({
         </div>
       )}
 
+      {error && <RequestError message={error} onRetry={handleRefresh} />}
+
       {/* Data Table */}
-      {!loading && (
-        <div className="min-w-0 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="min-w-[980px]">
+      {!loading && !error && (
+        <div className="relative min-w-0 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+          {refreshing && (
+            <div
+              className="absolute inset-x-0 top-0 z-20 flex items-center justify-center gap-2 rounded-t-2xl bg-white/85 py-2 text-xs font-bold text-slate-500 backdrop-blur-sm"
+              role="status"
+              aria-live="polite"
+            >
+              <FiRefreshCw size={14} className="animate-spin text-blue-500" />
+              Updating parts...
+            </div>
+          )}
+          <div className="min-w-[1100px]">
             {/* Table Header */}
-            <div className="sticky top-0 z-10 grid grid-cols-[50px_minmax(180px,1.2fr)_100px_110px_120px_85px_130px_110px] items-center gap-3 px-4 py-3.5 bg-slate-50 border-b border-slate-200 text-[11px] font-black uppercase tracking-widest text-slate-400">
+            <div className="sticky top-0 z-10 grid grid-cols-[50px_minmax(180px,1.2fr)_100px_110px_120px_85px_130px_125px_110px] items-center gap-3 px-4 py-3.5 bg-slate-50 border-b border-slate-200 text-[11px] font-black uppercase tracking-widest text-slate-400">
               <span>Img</span>
               <span>Part</span>
               <span>Brand</span>
@@ -246,6 +283,7 @@ export default function PartList({
               <span>Agent</span>
               <span>Qty</span>
               <span>Price</span>
+              <span>Registered</span>
               <span className="text-right">Actions</span>
             </div>
 
@@ -269,7 +307,7 @@ export default function PartList({
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       onClick={() => setExpandedId(expandedId === p.id ? null : p.id)}
-                      className={`grid grid-cols-[50px_minmax(180px,1.2fr)_100px_110px_120px_85px_130px_110px] items-center gap-3 px-4 py-3 transition-colors ${
+                      className={`grid grid-cols-[50px_minmax(180px,1.2fr)_100px_110px_120px_85px_130px_125px_110px] items-center gap-3 px-4 py-3 transition-colors ${
                         expandedId === p.id ? "bg-blue-50/60 cursor-pointer" : "hover:bg-slate-50 cursor-pointer"
                       }`}
                     >
@@ -341,8 +379,16 @@ export default function PartList({
 
                       {/* Price in Birr */}
                       <div>
-                        <p className="text-sm font-black text-blue-600">{formatMoney(p.unit_price)}</p>
+                        <p className="text-sm font-black text-blue-600">Selling Price {formatMoney(p.unit_price)}</p>
                         <p className="text-[11px] font-bold text-slate-400">Cost {formatMoney(p.unit_cost)}</p>
+                      </div>
+
+                      {/* Registration Date */}
+                      <div className="min-w-0">
+                        <p className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600" title={p.created_at || "Registration date unavailable"}>
+                          <FiCalendar size={13} className="flex-shrink-0 text-slate-400" />
+                          <span className="truncate">{formatRegisteredDate(p.created_at)}</span>
+                        </p>
                       </div>
 
                       {/* Action Buttons: Expand, Edit, Delete */}
@@ -429,7 +475,7 @@ export default function PartList({
                                     <p className="text-base font-black text-slate-800">{formatMoney(p.unit_cost)}</p>
                                   </div>
                                   <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase">Unit Price</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase">Selling Price</p>
                                     <p className="text-base font-black text-blue-600">{formatMoney(p.unit_price)}</p>
                                   </div>
                                 </div>
@@ -442,7 +488,14 @@ export default function PartList({
                                   ))}
                                 </div>
                               </div>
-
+                              <div className="mt-3 bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+                                <p className="text-[10px] font-bold text-slate-400 uppercase">Registered</p>
+                                <p className="inline-flex items-center gap-2 text-sm font-black text-slate-800">
+                                  <FiCalendar size={14} className="text-slate-400" />
+                                  {formatRegisteredDate(p.created_at)}
+                                </p>
+                              </div>
+                                
                               {/* Inventory & Agent Details */}
                               <div className="space-y-3">
                                 <h4 className="text-xs font-black uppercase text-slate-400 tracking-widest flex items-center gap-2">

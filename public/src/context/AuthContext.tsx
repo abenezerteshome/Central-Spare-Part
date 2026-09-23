@@ -15,7 +15,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   loading: boolean;
   isAdmin: boolean;
 }
@@ -98,11 +98,20 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
   };
 
   /** 🔹 Logout */
-  const logout = () => {
-    setToken(null);
-    setUser(null);
-    localStorage.removeItem('user');
-    toast.info('Logged out');
+  const logout = async () => {
+    try {
+      if (token) {
+        await axiosClient.post('/admin/logout');
+      }
+      toast.info('Logged out');
+    } catch (err) {
+      console.error('Error logging out:', err);
+      toast.error('Logout failed on the server. Your local session was cleared.');
+    } finally {
+      setToken(null);
+      setUser(null);
+      localStorage.removeItem('user');
+    }
   };
 
   return (
@@ -119,4 +128,3 @@ export const useAuth = () => {
   if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 };
-

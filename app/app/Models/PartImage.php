@@ -10,6 +10,8 @@ class PartImage extends Model
 {
     use HasFactory;
 
+    protected $appends = ['url', 'thumb_url'];
+
     // Table name
     protected $table = 'part_images';
 

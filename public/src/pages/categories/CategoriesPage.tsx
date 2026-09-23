@@ -7,7 +7,10 @@ import { useFetch } from '../../hooks/useFetch';
 import { endpoints } from '../../api/endpoints';
 
 const CategoriesPage: React.FC = () => {
-  const { data: categories, refetch } = useFetch(endpoints.CATEGORIES.LIST);
+  const { data: categories, refetch, loading } = useFetch(endpoints.CATEGORIES.LIST, [], {
+    cacheKey: 'reference:categories',
+    keepPreviousData: true,
+  });
   const [editingCategory, setEditingCategory] = useState<any>(null);
 
   const handleEdit = (category: any) => setEditingCategory(category);
@@ -23,7 +26,7 @@ const CategoriesPage: React.FC = () => {
             setEditingCategory(null);
           }}
         />
-        <CategoriesTable categories={categories?.data || []} onEdit={handleEdit} onRefresh={refetch} />
+        <CategoriesTable loading={loading} categories={categories?.data || []} onEdit={handleEdit} onRefresh={refetch} />
       </div>
     </DashboardLayout>
   );

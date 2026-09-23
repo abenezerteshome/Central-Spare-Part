@@ -2,6 +2,7 @@
 import React, { JSX } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import Loader from '../components/Loader';
 
 interface ProtectedRouteProps {
   children: JSX.Element;
@@ -11,7 +12,7 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminOnly = false }) => {
   const { user, loading } = useAuth();
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <Loader />;
 
   if (!user) return <Navigate to="/signin" replace />;
 
@@ -21,4 +22,3 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminOnly = f
 };
 
 export default ProtectedRoute;
-

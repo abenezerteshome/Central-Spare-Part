@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\UploadedFile;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver; 
+use Intervention\Image\Drivers\Gd\Encoders\JpegEncoder;
+use Intervention\Image\Drivers\Gd\Encoders\PngEncoder;
 
 trait HandlesImages
 {
@@ -35,14 +37,15 @@ trait HandlesImages
             $thumbPath = $folder . '/' . $thumbName;
             
             // Encode with compression (80% quality for JPEG, 8 colors for PNG)
-            $encoded = $img->encode(
-                format: pathinfo($file->getClientOriginalName(), PATHINFO_EXTENSION) === 'png' ? 'png' : 'jpeg',
-                quality: 75
-            );
+            $extension = strtolower(pathinfo($file->getClientOriginalName(), PATHINFO_EXTENSION));
+            $encoder = $extension === 'png'
+                ? new PngEncoder()
+                : new JpegEncoder(quality: 75);
+            $encoded = $img->encode($encoder);
             
             Storage::disk('public')->put($thumbPath, $encoded);
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // If thumbnail creation fails, continue without it
             $thumbPath = null;
         }

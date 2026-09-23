@@ -4,14 +4,15 @@ import { useFetch } from '../../hooks/useFetch';
 import { useMutation } from '../../hooks/useMutation';
 import { endpoints } from '../../api/endpoints';
 import { useToast } from '../../hooks/useToast';
-import { FiEye, FiEyeOff, FiTrash2, FiEdit2, FiHome } from 'react-icons/fi';
+import { FiEye, FiEyeOff, FiTrash2, FiEdit2, FiHome, FiCalendar } from 'react-icons/fi';
+import RequestError from '../RequestError';
 
 interface ExpenseListProps {
   onEdit: (expense: any) => void;
 }
 
 const ExpenseList: React.FC<ExpenseListProps> = ({ onEdit }) => {
-  const { data: expenses, refetch } = useFetch(endpoints.EXPENSES.LIST);
+  const { data: expenses, refetch, loading, refreshing, error } = useFetch(endpoints.EXPENSES.LIST);
   const { mutate: deleteExpense } = useMutation((id: string) => `${endpoints.EXPENSES.DELETE(id)}`, 'delete');
   const toast = useToast();
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -29,10 +30,58 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ onEdit }) => {
 
   const list = expenses?.data?.data || [];
 
-  if (!list.length) return <div className="text-center text-gray-500 mt-4">No expenses found.</div>;
+  const formatExpenseDate = (value: any) => {
+    if (!value) return 'Not recorded';
+    const date = new Date(`${String(value).slice(0, 10)}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return 'Not recorded';
+    return new Intl.DateTimeFormat(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    }).format(date);
+  };
+
+  const SkeletonRow = () => (
+    <div className="animate-pulse rounded-lg border bg-white p-3 shadow-sm">
+      <div className="flex items-center gap-3">
+        <div className="h-4 w-8 rounded bg-gray-200" />
+        <div className="h-4 flex-1 rounded bg-gray-200" />
+        <div className="h-4 w-24 rounded bg-gray-200" />
+        <div className="h-4 w-28 rounded bg-gray-200" />
+        <div className="flex gap-2">
+          <div className="h-8 w-8 rounded bg-gray-200" />
+          <div className="h-8 w-8 rounded bg-gray-200" />
+          <div className="h-8 w-8 rounded bg-gray-200" />
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div>
+      {loading && (
+        <div className="space-y-3" aria-label="Loading expenses">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <SkeletonRow key={index} />
+          ))}
+        </div>
+      )}
+
+      {error && !loading && <RequestError message={error} onRetry={refetch} />}
+
+      {refreshing && !loading && (
+        <div className="mb-3 flex items-center gap-2 text-sm font-medium text-blue-600" role="status">
+          <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-blue-500" />
+          Updating expenses...
+        </div>
+      )}
+
+      {!loading && !error && !list.length && (
+        <div className="mt-4 text-center text-gray-500">No expenses found.</div>
+      )}
+
+      {!loading && !error && list.length > 0 && (
+        <>
       <div className="mb-3">
         <a href="/dashboard" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-800" aria-label="Back to home">
           <FiHome className="h-5 w-5" />
@@ -40,10 +89,11 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ onEdit }) => {
       </div>
 
       {/* DESKTOP HEADER */}
-      <div className="hidden md:grid grid-cols-4 font-semibold text-gray-700 px-2 py-2 border-b">
+      <div className="hidden md:grid grid-cols-[8%_32%_20%_20%_20%] font-semibold text-gray-700 px-2 py-2 border-b">
         <div>No</div>
         <div>Title</div>
         <div>Amount</div>
+        <div>Expense Date</div>
         <div className="text-center">Actions</div>
       </div>
 
@@ -56,6 +106,10 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ onEdit }) => {
                 <div className="text-sm font-semibold text-gray-700 w-8">{idx + 1}</div>
                 <div className="flex-1 font-medium text-gray-900 truncate">{exp.title}</div>
                 <div className="text-sm text-gray-600 w-24 truncate">{exp.amount}</div>
+                <div className="hidden sm:flex items-center gap-1 text-xs text-gray-500 whitespace-nowrap">
+                  <FiCalendar className="text-gray-400" />
+                  {formatExpenseDate(exp.date)}
+                </div>
                 <div className="flex items-center justify-end gap-2">
                   <button
                     onClick={() => setExpandedId(prev => (prev === exp.id ? null : exp.id))}
@@ -84,10 +138,14 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ onEdit }) => {
               </div>
 
               {/* DESKTOP ROW */}
-              <div className="hidden md:grid grid-cols-4 items-center px-2">
+              <div className="hidden md:grid grid-cols-[8%_32%_20%_20%_20%] items-center px-2">
                 <div className="text-gray-700 font-medium">{idx + 1}</div>
                 <div className="font-medium text-gray-800">{exp.title}</div>
                 <div className="text-gray-600">{exp.amount}</div>
+                <div className="inline-flex items-center gap-2 text-sm text-gray-600">
+                  <FiCalendar className="text-gray-400" />
+                  {formatExpenseDate(exp.date)}
+                </div>
                 <div className="flex items-center justify-center gap-3">
                   <button
                     onClick={() => setExpandedId(prev => (prev === exp.id ? null : exp.id))}
@@ -120,7 +178,10 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ onEdit }) => {
                   <div><b>Title:</b> {exp.title}</div>
                   <div><b>Amount:</b> {exp.amount}</div>
                   <div><b>Description:</b> {exp.description || '-'}</div>
-                  <div><b>Date:</b> {exp.date || '-'}</div>
+                  <div className="inline-flex items-center gap-2">
+                    <FiCalendar className="text-gray-400" />
+                    <b>Expense date:</b> {formatExpenseDate(exp.date)}
+                  </div>
                 </div>
 
                 {/* Mobile full-width action buttons for accessibility */}
@@ -137,6 +198,8 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ onEdit }) => {
           </div>
         ))}
       </div>
+        </>
+      )}
     </div>
   );
 };

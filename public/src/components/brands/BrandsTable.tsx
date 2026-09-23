@@ -13,12 +13,13 @@ interface Brand {
 
 interface BrandsTableProps {
   brands: any;
+  loading?: boolean;
   onEdit: (brand: Brand) => void;
   onRefresh?: () => void;
 }
 
 
-const BrandsTable: React.FC<BrandsTableProps> = ({ brands, onEdit, onRefresh }) => {
+const BrandsTable: React.FC<BrandsTableProps> = ({ brands, loading = false, onEdit, onRefresh }) => {
   const { mutate: deleteBrand } = useMutation((id: string) => `${endpoints.BRANDS.DELETE(id)}`, 'delete');
   const toast = useToast();
 
@@ -43,6 +44,10 @@ const BrandsTable: React.FC<BrandsTableProps> = ({ brands, onEdit, onRefresh }) 
       toast.error('Failed to delete brand.');
     }
   };
+
+  if (loading) {
+    return <div className="mt-4 space-y-3">{Array.from({ length: 5 }).map((_, index) => <div key={index} className="h-12 animate-pulse rounded-lg bg-gray-200" />)}</div>;
+  }
 
   if (!brandList.length) {
     return <div className="text-center text-gray-500 mt-4">No brands found.</div>;

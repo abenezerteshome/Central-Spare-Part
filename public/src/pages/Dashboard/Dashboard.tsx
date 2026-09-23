@@ -10,7 +10,10 @@ const Dashboard: React.FC = () => {
   const [summary, setSummary] = useState<any>({});
 
   // Fetch agents for "Parts By Agent"
-  const { data: agentsData } = useFetch(endpoints.AGENTS.LIST);
+  const { data: agentsData, loading: agentsLoading } = useFetch(endpoints.AGENTS.LIST, [], {
+    cacheKey: 'reference:agents',
+    keepPreviousData: true,
+  });
 
   useEffect(() => {
     let mounted = true;
@@ -87,7 +90,11 @@ const Dashboard: React.FC = () => {
         <h2 className="text-xl font-semibold mt-10 mb-3">Parts by Agent</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {agents.length === 0 ? (
+          {agentsLoading ? (
+            Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="h-28 animate-pulse rounded-lg border bg-gray-200" />
+            ))
+          ) : agents.length === 0 ? (
             <div className="text-gray-500">No agents found...</div>
           ) : (
             agents.map((agent: any) => {
