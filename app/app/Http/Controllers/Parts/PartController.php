@@ -300,12 +300,13 @@ class PartController extends Controller
         // -------------------- Handle removed images --------------------
         $removeIds = $request->input('remove_image_ids', []);
         if (is_array($removeIds) && count($removeIds) > 0) {
+            $disk = config('filesystems.default', 'public');
             foreach ($removeIds as $rid) {
                 $img = \App\Models\PartImage::find($rid);
                 if ($img) {
                     try {
-                        if (!empty($img->file_path)) Storage::disk('public')->delete($img->file_path);
-                        if (!empty($img->thumb_path)) Storage::disk('public')->delete($img->thumb_path);
+                        if (!empty($img->file_path)) Storage::disk($disk)->delete($img->file_path);
+                        if (!empty($img->thumb_path)) Storage::disk($disk)->delete($img->thumb_path);
                     } catch (\Exception $e) {
                         // ignore failures to delete files
                     }

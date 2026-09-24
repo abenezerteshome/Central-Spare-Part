@@ -68,15 +68,21 @@ class PartImage extends Model
     // Accessors for URLs (optional)
     public function getUrlAttribute()
     {
-        return $this->file_path
-            ? asset('storage/' . $this->file_path)
-            : null;
+        if (!$this->file_path) return null;
+        if (preg_match('/^https?:\/\//i', $this->file_path)) {
+            return $this->file_path;
+        }
+        $disk = config('filesystems.default', 'public');
+        return \Illuminate\Support\Facades\Storage::disk($disk)->url($this->file_path);
     }
 
     public function getThumbUrlAttribute()
     {
-        return $this->thumb_path
-            ? asset('storage/' . $this->thumb_path)
-            : null;
+        if (!$this->thumb_path) return null;
+        if (preg_match('/^https?:\/\//i', $this->thumb_path)) {
+            return $this->thumb_path;
+        }
+        $disk = config('filesystems.default', 'public');
+        return \Illuminate\Support\Facades\Storage::disk($disk)->url($this->thumb_path);
     }
 }

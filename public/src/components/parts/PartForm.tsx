@@ -525,7 +525,13 @@ export default function PartForm({
                 {existingImages.map((img: any) => (
                   <div key={img.id} className="relative inline-block">
                     <img
-                      src={img.thumb_path ? `${storageBase}/storage/${img.thumb_path}` : img.file_path ? `${storageBase}/storage/${img.file_path}` : img.url}
+                      src={
+                        img.thumb_url || img.url
+                          ? (img.thumb_url || img.url)
+                          : /^https?:\/\//i.test(img.thumb_path || img.file_path || '')
+                          ? (img.thumb_path || img.file_path)
+                          : `${storageBase}/storage/${img.thumb_path || img.file_path}`
+                      }
                       className="w-24 h-16 object-cover rounded border"
                       alt="existing"
                     />

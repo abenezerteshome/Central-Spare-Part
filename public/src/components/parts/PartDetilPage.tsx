@@ -44,11 +44,11 @@ const PartDetailPage: React.FC = () => {
 
   const getImageUrl = (img: any) => {
     if (!img) return '';
-    if (img.file_path) return `${storageBase}/storage/${img.file_path}`;
-    if (img.thumb_path) return `${storageBase}/storage/${img.thumb_path}`;
-    if (img.url) return img.url;
-    if (img.path) return `${storageBase}/${img.path}`;
-    return '';
+    if (img.thumb_url || img.url) return img.thumb_url || img.url;
+    const path = img.thumb_path || img.file_path || img.path;
+    if (!path) return '';
+    if (/^https?:\/\//i.test(path)) return path;
+    return `${storageBase}/storage/${String(path).replace(/^\/?storage\//, '').replace(/^\/+/, '')}`;
   };
 
   return (

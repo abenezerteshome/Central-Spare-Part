@@ -17,8 +17,10 @@ trait HandlesImages
      */
     public function storeImage(UploadedFile $file, $folder = 'parts')
     {
+        $disk = config('filesystems.default', 's3');
+
         // Store the original file
-        $path = $file->storePublicly($folder, 'public');
+        $path = $file->storePublicly($folder, $disk);
         $thumbPath = null;
 
         try {
@@ -43,7 +45,7 @@ trait HandlesImages
                 : new JpegEncoder(quality: 75);
             $encoded = $img->encode($encoder);
             
-            Storage::disk('public')->put($thumbPath, $encoded);
+            Storage::disk($disk)->put($thumbPath, $encoded, 'public');
 
         } catch (\Throwable $e) {
             // If thumbnail creation fails, continue without it
