@@ -16,6 +16,7 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ onEdit }) => {
   const { mutate: deleteExpense } = useMutation((id: string) => `${endpoints.EXPENSES.DELETE(id)}`, 'delete');
   const toast = useToast();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure to delete this expense?')) return;

@@ -10,7 +10,7 @@ import axiosClient from '../../api/axiosClient';
 const PartDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const detailUrl = id ? endpoints.PARTS.DETAIL(id) : '';
-  const { data: part, error } = useFetch(detailUrl);
+  const { data: part } = useFetch(detailUrl);
   const { mutate: deletePart } = useMutation(endpoints.PARTS.DELETE, 'delete');
   const navigate = useNavigate();
   const toast = useToast();
