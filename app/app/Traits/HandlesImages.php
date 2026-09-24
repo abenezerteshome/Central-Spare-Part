@@ -17,44 +17,80 @@ trait HandlesImages
      */
     public function storeImage(UploadedFile $file, $folder = 'parts')
     {
-        $disk = config('filesystems.default', 's3');
+        $awsBucket = env('AWS_BUCKET');
+        $awsKey = env('AWS_ACCESS_KEY_ID');
 
-        // Store the original file
-        $path = $file->storePublicly($folder, $disk);
-        $thumbPath = null;
+        // 1. Try S3 Cloud Storage if AWS credentials are configured
+        if (!empty($awsBucket) && !empty($awsKey)) {
+            try {
+                $path = $file->storePublicly($folder, 's3');
+                $thumbPath = null;
 
+                try {
+                    $manager = new ImageManager(new Driver());
+                    $img = $manager->read($file->getRealPath())
+                        ->resize(400, 300, function ($constraint) {
+                            $constraint->aspectRatio();
+                            $constraint->upsize();
+                        });
+
+                    $thumbName = 'thumb_' . basename($path);
+                    $thumbPath = $folder . '/' . $thumbName;
+                    $extension = strtolower(pathinfo($file->getClientOriginalName(), PATHINFO_EXTENSION));
+                    $encoder = $extension === 'png' ? new PngEncoder() : new JpegEncoder(quality: 75);
+                    $encoded = $img->encode($encoder);
+
+                    Storage::disk('s3')->put($thumbPath, $encoded, 'public');
+                } catch (\Throwable $e) {
+                    $thumbPath = null;
+                }
+
+                return [
+                    'path' => $path,
+                    'thumb' => $thumbPath,
+                ];
+            } catch (\Throwable $e) {
+                // If S3 upload fails, fall through to Data URL fallback
+            }
+        }
+
+        // 2. Fallback for Serverless / Vercel without external S3:
+        // Resize & compress in-memory, convert to Data URL (base64) and store directly in Database
         try {
-            // Create thumbnail with compression
             $manager = new ImageManager(new Driver());
-            
-            // Read and resize the original in-memory, compress for thumbnail
-            $img = $manager->read($file->getRealPath())
-                ->resize(400, 300, function ($constraint) {
+            $realPath = $file->getRealPath();
+
+            // Original Image (compressed max 800x600)
+            $fullImg = $manager->read($realPath)
+                ->resize(800, 600, function ($constraint) {
                     $constraint->aspectRatio();
                     $constraint->upsize();
                 });
+            $encodedFull = $fullImg->encode(new JpegEncoder(quality: 75));
+            $fullDataUrl = 'data:image/jpeg;base64,' . base64_encode((string)$encodedFull);
 
-            // Generate thumbnail with quality compression
-            $thumbName = 'thumb_' . basename($path);
-            $thumbPath = $folder . '/' . $thumbName;
-            
-            // Encode with compression (80% quality for JPEG, 8 colors for PNG)
-            $extension = strtolower(pathinfo($file->getClientOriginalName(), PATHINFO_EXTENSION));
-            $encoder = $extension === 'png'
-                ? new PngEncoder()
-                : new JpegEncoder(quality: 75);
-            $encoded = $img->encode($encoder);
-            
-            Storage::disk($disk)->put($thumbPath, $encoded, 'public');
+            // Thumbnail Image (compressed max 300x225)
+            $thumbImg = $manager->read($realPath)
+                ->resize(300, 225, function ($constraint) {
+                    $constraint->aspectRatio();
+                    $constraint->upsize();
+                });
+            $encodedThumb = $thumbImg->encode(new JpegEncoder(quality: 70));
+            $thumbDataUrl = 'data:image/jpeg;base64,' . base64_encode((string)$encodedThumb);
 
+            return [
+                'path' => $fullDataUrl,
+                'thumb' => $thumbDataUrl,
+            ];
         } catch (\Throwable $e) {
-            // If thumbnail creation fails, continue without it
-            $thumbPath = null;
+            // Raw base64 fallback if image manager fails
+            $content = file_get_contents($file->getRealPath());
+            $mime = $file->getMimeType() ?: 'image/jpeg';
+            $dataUrl = 'data:' . $mime . ';base64,' . base64_encode($content);
+            return [
+                'path' => $dataUrl,
+                'thumb' => $dataUrl,
+            ];
         }
-
-        return [
-            'path' => $path,
-            'thumb' => $thumbPath,
-        ];
     }
 }

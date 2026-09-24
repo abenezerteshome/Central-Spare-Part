@@ -69,7 +69,7 @@ class PartImage extends Model
     public function getUrlAttribute()
     {
         if (!$this->file_path) return null;
-        if (preg_match('/^https?:\/\//i', $this->file_path)) {
+        if (preg_match('/^(https?:\/\/|data:image\/)/i', $this->file_path)) {
             return $this->file_path;
         }
         $disk = config('filesystems.default', 'public');
@@ -79,7 +79,7 @@ class PartImage extends Model
     public function getThumbUrlAttribute()
     {
         if (!$this->thumb_path) return null;
-        if (preg_match('/^https?:\/\//i', $this->thumb_path)) {
+        if (preg_match('/^(https?:\/\/|data:image\/)/i', $this->thumb_path)) {
             return $this->thumb_path;
         }
         $disk = config('filesystems.default', 'public');

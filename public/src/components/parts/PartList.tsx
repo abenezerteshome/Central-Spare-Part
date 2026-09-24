@@ -143,7 +143,7 @@ export default function PartList({
     const base = axiosClient.defaults.baseURL?.replace(/\/api\/?$/, '') || window.location.origin;
     const path = img.thumb_path || img.file_path;
     if (!path) return null;
-    if (/^https?:\/\//i.test(path)) return path;
+    if (/^(https?:\/\/|data:image\/)/i.test(path)) return path;
     return `${base}/storage/${String(path).replace(/^\/?storage\//, '').replace(/^\/+/, '')}`;
   };
 
