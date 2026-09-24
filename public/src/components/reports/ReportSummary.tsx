@@ -9,7 +9,22 @@ const ReportSummary: React.FC = () => {
     refetch();
   }, []);
 
-  if (!data) return <p>Loading...</p>;
+  if (!data) return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-pulse">
+      <div className="p-4 bg-slate-100 rounded-lg h-24 space-y-2">
+        <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+        <div className="h-8 bg-slate-200 rounded w-1/3"></div>
+      </div>
+      <div className="p-4 bg-slate-100 rounded-lg h-24 space-y-2">
+        <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+        <div className="h-8 bg-slate-200 rounded w-1/3"></div>
+      </div>
+      <div className="p-4 bg-slate-100 rounded-lg h-24 space-y-2">
+        <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+        <div className="h-8 bg-slate-200 rounded w-1/3"></div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

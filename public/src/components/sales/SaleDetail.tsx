@@ -9,7 +9,19 @@ interface SaleDetailProps {
 const SaleDetail: React.FC<SaleDetailProps> = ({ saleId }) => {
   const { data: sale, error } = useFetch(endpoints.SALES.DETAIL(saleId));
 
-  if (!sale || !sale.data) return <div className="p-4">Loading sale...</div>;
+  if (!sale || !sale.data) return (
+    <div className="bg-white shadow rounded p-4 space-y-3 animate-pulse">
+      <div className="h-6 bg-slate-200 rounded w-1/3 mb-2"></div>
+      <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+      <div className="h-4 bg-slate-200 rounded w-1/3"></div>
+      <div className="h-4 bg-slate-200 rounded w-1/4"></div>
+      <div className="h-4 bg-slate-200 rounded w-1/5"></div>
+      <div className="h-20 bg-slate-100 rounded p-2 space-y-2 mt-4">
+        <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+        <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+      </div>
+    </div>
+  );
   if (error) return <div className="p-4 text-red-600">Failed to load sale</div>;
 
   const s = sale.data;

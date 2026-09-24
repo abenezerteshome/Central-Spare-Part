@@ -11,7 +11,18 @@ interface PartDetailProps {
 const PartDetail: React.FC<PartDetailProps> = ({ partId }) => {
   const { data: part, error } = useFetch(endpoints.PARTS.DETAIL(partId));
 
-  if (!part || !part.data) return <div className="p-4">Loading part...</div>;
+  if (!part || !part.data) return (
+    <div className="bg-white shadow rounded p-6 space-y-4 animate-pulse">
+      <div className="h-6 bg-slate-200 rounded w-1/3"></div>
+      <div className="h-4 bg-slate-200 rounded w-1/4"></div>
+      <div className="h-4 bg-slate-200 rounded w-1/4"></div>
+      <div className="h-4 bg-slate-200 rounded w-1/5"></div>
+      <div className="flex gap-2 pt-2">
+        <div className="w-32 h-32 bg-slate-200 rounded-lg"></div>
+        <div className="w-32 h-32 bg-slate-200 rounded-lg"></div>
+      </div>
+    </div>
+  );
   if (error) return <div className="p-4 text-red-600">Failed to load part</div>;
 
   const p = part.data;

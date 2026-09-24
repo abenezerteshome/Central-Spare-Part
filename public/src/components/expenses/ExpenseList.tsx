@@ -4,7 +4,7 @@ import { useFetch } from '../../hooks/useFetch';
 import { useMutation } from '../../hooks/useMutation';
 import { endpoints } from '../../api/endpoints';
 import { useToast } from '../../hooks/useToast';
-import { FiEye, FiEyeOff, FiTrash2, FiEdit2, FiHome, FiCalendar } from 'react-icons/fi';
+import { FiEye, FiEyeOff, FiTrash2, FiEdit2, FiHome, FiCalendar, FiRefreshCw } from 'react-icons/fi';
 import RequestError from '../RequestError';
 
 interface ExpenseListProps {
@@ -15,16 +15,19 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ onEdit }) => {
   const { data: expenses, refetch, loading, refreshing, error } = useFetch(endpoints.EXPENSES.LIST);
   const { mutate: deleteExpense } = useMutation((id: string) => `${endpoints.EXPENSES.DELETE(id)}`, 'delete');
   const toast = useToast();
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure to delete this expense?')) return;
+    setDeletingId(id);
     try {
       await deleteExpense(id);
       toast.success('Expense deleted');
       refetch();
     } catch (err) {
       toast.error('Failed to delete');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -129,10 +132,11 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ onEdit }) => {
 
                   <button
                     onClick={() => handleDelete(exp.id)}
-                    className="p-3 rounded bg-red-50 hover:bg-red-100 text-red-600"
+                    disabled={deletingId === exp.id}
+                    className="p-3 rounded bg-red-50 hover:bg-red-100 text-red-600 disabled:opacity-50"
                     aria-label="Delete expense"
                   >
-                    <FiTrash2 />
+                    {deletingId === exp.id ? <FiRefreshCw className="animate-spin" /> : <FiTrash2 />}
                   </button>
                 </div>
               </div>
@@ -163,9 +167,10 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ onEdit }) => {
 
                   <button
                     onClick={() => handleDelete(exp.id)}
-                    className="p-2 rounded hover:bg-gray-100 text-red-500"
+                    disabled={deletingId === exp.id}
+                    className="p-2 rounded hover:bg-gray-100 text-red-500 disabled:opacity-50"
                   >
-                    <FiTrash2 />
+                    {deletingId === exp.id ? <FiRefreshCw className="animate-spin" /> : <FiTrash2 />}
                   </button>
                 </div>
               </div>

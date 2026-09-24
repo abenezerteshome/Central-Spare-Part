@@ -15,8 +15,24 @@ const PartDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const toast = useToast();
 
-  if (error) return <div className="p-4 text-red-600">Failed to load part.</div>;
-  if (!part?.data) return <div className="p-4">Loading...</div>;
+  if (!part?.data) return (
+    <div className="bg-white shadow-md p-6 rounded-lg max-w-4xl mx-auto space-y-6 animate-pulse">
+      <div className="flex justify-between items-center border-b pb-4">
+        <div className="h-8 bg-slate-200 rounded w-1/3"></div>
+        <div className="h-9 bg-slate-200 rounded w-24"></div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="h-5 bg-slate-200 rounded w-1/2"></div>
+        <div className="h-5 bg-slate-200 rounded w-1/2"></div>
+        <div className="h-5 bg-slate-200 rounded w-1/3"></div>
+        <div className="h-5 bg-slate-200 rounded w-1/3"></div>
+      </div>
+      <div className="flex gap-4 pt-4">
+        <div className="w-40 h-40 bg-slate-200 rounded-lg"></div>
+        <div className="w-40 h-40 bg-slate-200 rounded-lg"></div>
+      </div>
+    </div>
+  );
 
   const handleDelete = async () => {
     if (!confirm('Are you sure to delete this part?')) return;
