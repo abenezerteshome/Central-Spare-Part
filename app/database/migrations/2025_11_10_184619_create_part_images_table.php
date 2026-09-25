@@ -16,8 +16,8 @@ return new class extends Migration
             $table->uuid('part_id')->nullable();
             $table->uuid('part_item_id')->nullable();
             $table->uuid('uploader_id')->nullable();
-            $table->string('file_path');
-            $table->string('thumb_path')->nullable();
+            $table->text('file_path');
+            $table->text('thumb_path')->nullable();
             $table->string('phash')->nullable();
             $table->integer('width')->nullable();
             $table->integer('height')->nullable();

@@ -526,11 +526,14 @@ export default function PartForm({
                   <div key={img.id} className="relative inline-block">
                     <img
                       src={
-                        img.thumb_url || img.url
-                          ? (img.thumb_url || img.url)
-                          : /^https?:\/\//i.test(img.thumb_path || img.file_path || '')
-                          ? (img.thumb_path || img.file_path)
-                          : `${storageBase}/storage/${img.thumb_path || img.file_path}`
+                        (() => {
+                          const p = img.thumb_url || img.url || img.thumb_path || img.file_path || '';
+                          if (!p) return '';
+                          // Data URLs and absolute HTTP URLs are used as-is
+                          if (/^(data:image\/|https?:\/\/)/i.test(p)) return p;
+                          // Relative storage path — prefix with backend storage base
+                          return `${storageBase}/storage/${p.replace(/^\/?storage\//, '').replace(/^\/+/, '')}`;
+                        })()
                       }
                       className="w-24 h-16 object-cover rounded border"
                       alt="existing"

@@ -3,17 +3,19 @@
 namespace App\Traits;
 
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\UploadedFile;
 use Intervention\Image\ImageManager;
-use Intervention\Image\Drivers\Gd\Driver; 
+use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\Drivers\Gd\Encoders\JpegEncoder;
 use Intervention\Image\Drivers\Gd\Encoders\PngEncoder;
 
 trait HandlesImages
 {
     /**
-     * Store an image and create a compressed thumbnail
-     * Optimized for performance by avoiding file mirroring (use symlink instead)
+     * Store an image and create a compressed thumbnail.
+     * Tries S3 first (if AWS credentials are configured), then falls back to
+     * a base64 Data URL stored directly in the database (for Vercel / serverless).
      */
     public function storeImage(UploadedFile $file, $folder = 'parts')
     {
@@ -42,53 +44,74 @@ trait HandlesImages
 
                     Storage::disk('s3')->put($thumbPath, $encoded, 'public');
                 } catch (\Throwable $e) {
+                    Log::warning('HandlesImages: S3 thumbnail creation failed', [
+                        'error' => $e->getMessage(),
+                        'file'  => $file->getClientOriginalName(),
+                    ]);
                     $thumbPath = null;
                 }
 
                 return [
-                    'path' => $path,
+                    'path'  => $path,
                     'thumb' => $thumbPath,
                 ];
             } catch (\Throwable $e) {
-                // If S3 upload fails, fall through to Data URL fallback
+                // Log so it appears in Vercel / Laravel logs
+                Log::error('HandlesImages: S3 upload failed, falling back to base64 Data URL', [
+                    'error'  => $e->getMessage(),
+                    'bucket' => $awsBucket,
+                    'file'   => $file->getClientOriginalName(),
+                ]);
+                // Fall through to Data URL fallback below
             }
         }
 
         // 2. Fallback for Serverless / Vercel without external S3:
-        // Resize & compress in-memory, convert to Data URL (base64) and store directly in Database
+        // Resize & compress in-memory, then convert to Data URL (base64) stored in the DB.
+        // NOTE: The part_images.file_path and thumb_path columns MUST be TEXT (not VARCHAR 255).
         try {
             $manager = new ImageManager(new Driver());
             $realPath = $file->getRealPath();
 
-            // Original Image (compressed max 800x600)
+            // Full image: max 800×600, JPEG quality 75
             $fullImg = $manager->read($realPath)
                 ->resize(800, 600, function ($constraint) {
                     $constraint->aspectRatio();
                     $constraint->upsize();
                 });
-            $encodedFull = $fullImg->encode(new JpegEncoder(quality: 75));
-            $fullDataUrl = 'data:image/jpeg;base64,' . base64_encode((string)$encodedFull);
+            $encodedFull  = $fullImg->encode(new JpegEncoder(quality: 75));
+            $fullDataUrl  = 'data:image/jpeg;base64,' . base64_encode((string) $encodedFull);
 
-            // Thumbnail Image (compressed max 300x225)
+            // Thumbnail: max 300×225, JPEG quality 70
             $thumbImg = $manager->read($realPath)
                 ->resize(300, 225, function ($constraint) {
                     $constraint->aspectRatio();
                     $constraint->upsize();
                 });
             $encodedThumb = $thumbImg->encode(new JpegEncoder(quality: 70));
-            $thumbDataUrl = 'data:image/jpeg;base64,' . base64_encode((string)$encodedThumb);
+            $thumbDataUrl = 'data:image/jpeg;base64,' . base64_encode((string) $encodedThumb);
+
+            Log::info('HandlesImages: stored image as base64 Data URL', [
+                'file'      => $file->getClientOriginalName(),
+                'full_len'  => strlen($fullDataUrl),
+                'thumb_len' => strlen($thumbDataUrl),
+            ]);
 
             return [
-                'path' => $fullDataUrl,
+                'path'  => $fullDataUrl,
                 'thumb' => $thumbDataUrl,
             ];
         } catch (\Throwable $e) {
-            // Raw base64 fallback if image manager fails
+            Log::error('HandlesImages: base64 encoding failed, using raw fallback', [
+                'error' => $e->getMessage(),
+                'file'  => $file->getClientOriginalName(),
+            ]);
+            // Raw base64 last-resort fallback
             $content = file_get_contents($file->getRealPath());
-            $mime = $file->getMimeType() ?: 'image/jpeg';
+            $mime    = $file->getMimeType() ?: 'image/jpeg';
             $dataUrl = 'data:' . $mime . ';base64,' . base64_encode($content);
             return [
-                'path' => $dataUrl,
+                'path'  => $dataUrl,
                 'thumb' => $dataUrl,
             ];
         }
