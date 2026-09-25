@@ -60,12 +60,12 @@ export const useMutation = <
       let config: any = {};
       let response;
 
-      // ✅ Detect FormData and adjust headers/method for backend compatibility
+      // ✅ Detect FormData: DELETE Content-Type so browser auto-sets multipart/form-data WITH boundary
+      // DO NOT set 'Content-Type': 'multipart/form-data' manually — it omits the boundary and breaks file uploads
       const isFormData = typeof FormData !== 'undefined' && finalPayload instanceof FormData;
       if (isFormData) {
         config.headers = {
-          // Let browser set multipart boundary
-          'Content-Type': 'multipart/form-data',
+          'Content-Type': undefined, // force browser to set multipart/form-data + boundary automatically
         };
       }
 
