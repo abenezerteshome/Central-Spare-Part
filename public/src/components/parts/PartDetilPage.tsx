@@ -60,12 +60,15 @@ const PartDetailPage: React.FC = () => {
 
   const getImageUrl = (img: any) => {
     if (!img) return '';
-    if (img.thumb_url || img.url) return img.thumb_url || img.url;
-    const path = img.thumb_path || img.file_path || img.path;
-    if (!path) return '';
-    if (/^https?:\/\//i.test(path)) return path;
+    const thumbUrl = img.thumb_url || img.url;
+    if (thumbUrl && typeof thumbUrl === 'string' && !thumbUrl.endsWith('thumb_') && thumbUrl !== '0') return thumbUrl;
+    const path = String(img.thumb_path || img.file_path || img.path || '').trim();
+    if (!path || path === '0' || path === 'false' || path.endsWith('thumb_') || path.endsWith('/thumb_')) return '';
+    if (/^(https?:\/\/|data:image\/)/i.test(path)) return path;
     return `${storageBase}/storage/${String(path).replace(/^\/?storage\//, '').replace(/^\/+/, '')}`;
   };
+
+  const validImages = (data.images || []).filter((img: any) => Boolean(getImageUrl(img)));
 
   return (
     <div className="bg-white shadow-md p-6 rounded-lg">
@@ -93,14 +96,17 @@ const PartDetailPage: React.FC = () => {
       <p><strong>Category:</strong> {data.category?.system}</p>
       <p><strong>Description:</strong> {data.description}</p>
 
-      {data.images?.length > 0 && (
+      {validImages.length > 0 && (
         <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {data.images.map((img: any) => (
+          {validImages.map((img: any) => (
             <img
               key={img.id}
               src={getImageUrl(img)}
-              alt={img.id}
+              alt={data.name || img.id}
               className="w-full h-40 object-cover rounded border"
+              onError={(e) => {
+                (e.currentTarget as HTMLElement).style.display = 'none';
+              }}
             />
           ))}
         </div>

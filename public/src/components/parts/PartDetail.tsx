@@ -39,12 +39,15 @@ const PartDetail: React.FC<PartDetailProps> = ({ partId }) => {
 
   const getImageUrl = (img: any) => {
     if (!img) return '';
-    if (img.thumb_url || img.url) return img.thumb_url || img.url;
-    const path = img.thumb_path || img.file_path || img.path;
-    if (!path) return '';
-    if (/^https?:\/\//i.test(path)) return path;
+    const thumbUrl = img.thumb_url || img.url;
+    if (thumbUrl && typeof thumbUrl === 'string' && !thumbUrl.endsWith('thumb_') && thumbUrl !== '0') return thumbUrl;
+    const path = String(img.thumb_path || img.file_path || img.path || '').trim();
+    if (!path || path === '0' || path === 'false' || path.endsWith('thumb_') || path.endsWith('/thumb_')) return '';
+    if (/^(https?:\/\/|data:image\/)/i.test(path)) return path;
     return `${storageBase}/storage/${String(path).replace(/^\/?storage\//, '').replace(/^\/+/, '')}`;
   };
+
+  const validImages = (p.images || []).filter((img: any) => Boolean(getImageUrl(img)));
 
   return (
     <div className="bg-white shadow rounded p-4 space-y-2">
@@ -53,8 +56,16 @@ const PartDetail: React.FC<PartDetailProps> = ({ partId }) => {
       <p><strong>Brand:</strong> {p.brand?.name}</p>
       <p><strong>Category:</strong> {p.category?.name}</p>
       <div className="flex flex-wrap">
-        {p.images?.map((img: any) => (
-          <img key={img.id} src={getImageUrl(img)} alt={img.id} className="w-32 h-32 object-cover m-1" />
+        {validImages.map((img: any) => (
+          <img
+            key={img.id}
+            src={getImageUrl(img)}
+            alt={p.name || img.id}
+            className="w-32 h-32 object-cover m-1 rounded"
+            onError={(e) => {
+              (e.currentTarget as HTMLElement).style.display = 'none';
+            }}
+          />
         ))}
       </div>
     </div>

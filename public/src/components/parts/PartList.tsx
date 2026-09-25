@@ -139,12 +139,13 @@ export default function PartList({
 
   const getImageUrl = (img: any) => {
     if (!img) return null;
-    if (img.thumb_url || img.url) return img.thumb_url || img.url;
+    const thumbUrl = img.thumb_url || img.url;
+    if (thumbUrl && typeof thumbUrl === 'string' && !thumbUrl.endsWith('thumb_') && thumbUrl !== '0') return thumbUrl;
     const base = axiosClient.defaults.baseURL?.replace(/\/api\/?$/, '') || window.location.origin;
-    const path = img.thumb_path || img.file_path;
-    if (!path) return null;
-    if (/^(https?:\/\/|data:image\/)/i.test(path)) return path;
-    return `${base}/storage/${String(path).replace(/^\/?storage\//, '').replace(/^\/+/, '')}`;
+    const raw = String(img.thumb_path || img.file_path || '').trim();
+    if (!raw || raw === '0' || raw === 'false' || raw === 'null' || raw.endsWith('thumb_') || raw.endsWith('/thumb_')) return null;
+    if (/^(https?:\/\/|data:image\/)/i.test(raw)) return raw;
+    return `${base}/storage/${raw.replace(/^\/?storage\//, '').replace(/^\/+/, '')}`;
   };
 
   const parseSpecs = (specs: any) => {
@@ -321,8 +322,15 @@ export default function PartList({
                             if (p.images?.[0]) setPreviewImage(getImageUrl(p.images[0]));
                           }}
                         >
-                          {p.images?.[0] ? (
-                            <img src={getImageUrl(p.images[0])} className="w-full h-full object-cover" alt={p.name || "Part image"} />
+                          {getImageUrl(p.images?.[0]) ? (
+                            <img
+                              src={getImageUrl(p.images[0])!}
+                              className="w-full h-full object-cover"
+                              alt={p.name || "Part image"}
+                              onError={(e) => {
+                                (e.currentTarget as HTMLElement).style.display = 'none';
+                              }}
+                            />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-slate-300"><FiImage size={20}/></div>
                           )}
@@ -448,15 +456,25 @@ export default function PartList({
                                   <FiImage /> Visual Reference
                                 </h4>
                                 <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                                  {p.images?.length ? p.images.map((img: any) => (
-                                    <img 
-                                      key={img.id}
-                                      src={getImageUrl(img)}
-                                      onClick={() => setPreviewImage(getImageUrl(img))}
-                                      alt={p.name || "Part image"}
-                                      className="h-24 w-32 object-cover rounded-xl border-4 border-white shadow-sm cursor-zoom-in hover:scale-105 transition-transform"
-                                    />
-                                  )) : (
+                                  {p.images?.filter((img: any) => Boolean(getImageUrl(img))).length ? (
+                                    p.images
+                                      .filter((img: any) => Boolean(getImageUrl(img)))
+                                      .map((img: any) => {
+                                        const url = getImageUrl(img)!;
+                                        return (
+                                          <img 
+                                            key={img.id}
+                                            src={url}
+                                            onClick={() => setPreviewImage(url)}
+                                            alt={p.name || "Part image"}
+                                            className="h-24 w-32 object-cover rounded-xl border-4 border-white shadow-sm cursor-zoom-in hover:scale-105 transition-transform"
+                                            onError={(e) => {
+                                              (e.currentTarget as HTMLElement).style.display = 'none';
+                                            }}
+                                          />
+                                        );
+                                      })
+                                  ) : (
                                     <div className="text-slate-400 italic text-sm p-4 bg-white rounded-xl border border-slate-100">
                                       No images uploaded
                                     </div>
