@@ -4,7 +4,7 @@ import { useFetch } from '../../hooks/useFetch';
 import { useMutation } from '../../hooks/useMutation';
 import { endpoints } from '../../api/endpoints';
 import { useToast } from '../../hooks/useToast';
-import { compressImages, isValidImage, formatFileSize } from '../../utils/imageCompression';
+import { compressImages, isValidImage, formatFileSize, fileToDataUrl } from '../../utils/imageCompression';
 
 interface PartFormProps {
   partId?: string;
@@ -60,6 +60,7 @@ export default function PartForm({
   const [images, setImages] = useState<File[] | null>(null);
   const effectiveImages = controlledImages ?? images;
   const [existingImages, setExistingImages] = useState<any[] | null>(null);
+  const [existingInlineImage, setExistingInlineImage] = useState<string | null>(null);
   const [removedImageIds, setRemovedImageIds] = useState<string[]>([]);
   const [compressingImages, setCompressingImages] = useState(false);
 
@@ -104,14 +105,25 @@ export default function PartForm({
           d.technical_specs.forEach((s: any) => {
             try {
               const parsed = typeof s === 'string' ? JSON.parse(s) : s;
-              if (parsed.key) specObj[parsed.key] = parsed.value;
+              if (parsed.key === '__image_data' || parsed.key === 'image') {
+                if (parsed.value && String(parsed.value).startsWith('data:image/')) {
+                  setExistingInlineImage(parsed.value);
+                }
+              } else if (parsed.key) {
+                specObj[parsed.key] = parsed.value;
+              }
             } catch {
               // fallback if parsing fails
             }
           });
           setTechnicalSpecs(specObj);
-        } else if (typeof d.technical_specs === 'object') {
-          setTechnicalSpecs(d.technical_specs || {});
+        } else if (typeof d.technical_specs === 'object' && d.technical_specs !== null) {
+          const specObj = { ...d.technical_specs };
+          if (specObj['__image_data']) {
+            setExistingInlineImage(specObj['__image_data']);
+            delete specObj['__image_data'];
+          }
+          setTechnicalSpecs(specObj);
         }
 
         // -------------------- Part Item & Location --------------------
@@ -221,6 +233,20 @@ export default function PartForm({
       if (mode === 'full') formData.append('is_active', String(isActive));
 
       const specsArray = Object.entries(technicalSpecs).map(([k, v]) => ({ key: k, value: v }));
+
+      // Option A: Store image directly in the database as Base64 Data URL
+      let inlineDataUrl = existingInlineImage;
+      if (effectiveImages && effectiveImages.length > 0) {
+        try {
+          inlineDataUrl = await fileToDataUrl(effectiveImages[0], 600, 0.75);
+        } catch (e) {
+          console.warn('Could not generate inline data url:', e);
+        }
+      }
+      if (inlineDataUrl) {
+        specsArray.push({ key: '__image_data', value: inlineDataUrl });
+      }
+
       specsArray.forEach((s, idx) => formData.append(`technical_specs[${idx}]`, JSON.stringify(s)));
 
       const partItem = {
@@ -547,6 +573,27 @@ export default function PartForm({
                     </button>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Existing inline image from database */}
+            {existingInlineImage && (!effectiveImages || effectiveImages.length === 0) && (!existingImages || existingImages.length === 0) && (
+              <div className="mt-3 flex gap-2 overflow-x-auto">
+                <div className="relative inline-block">
+                  <img
+                    src={existingInlineImage}
+                    className="w-24 h-16 object-cover rounded border"
+                    alt="existing inline"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setExistingInlineImage(null)}
+                    className="absolute -top-1 -right-1 bg-white rounded-full p-1 text-sm shadow"
+                    title="Remove image"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
             )}
           </div>

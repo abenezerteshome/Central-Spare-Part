@@ -47,7 +47,36 @@ const PartDetail: React.FC<PartDetailProps> = ({ partId }) => {
     return `${storageBase}/storage/${String(path).replace(/^\/?storage\//, '').replace(/^\/+/, '')}`;
   };
 
-  const validImages = (p.images || []).filter((img: any) => Boolean(getImageUrl(img)));
+  const getPartImageUrl = (part: any) => {
+    if (!part) return null;
+    const specs = part.technical_specs;
+    if (specs) {
+      if (Array.isArray(specs)) {
+        for (const s of specs) {
+          try {
+            const parsed = typeof s === 'string' ? JSON.parse(s) : s;
+            if (parsed?.key === '__image_data' || parsed?.key === 'image') {
+              if (typeof parsed?.value === 'string' && (parsed.value.startsWith('data:image/') || parsed.value.startsWith('http'))) {
+                return parsed.value;
+              }
+            }
+          } catch {}
+        }
+      } else if (typeof specs === 'object') {
+        const val = specs.__image_data || specs.image;
+        if (typeof val === 'string' && (val.startsWith('data:image/') || val.startsWith('http'))) {
+          return val;
+        }
+      }
+    }
+    return null;
+  };
+
+  const validImages = (() => {
+    const fromImages = (p.images || []).map((img: any) => getImageUrl(img)).filter(Boolean);
+    const inline = getPartImageUrl(p);
+    return Array.from(new Set([...(inline ? [inline] : []), ...fromImages]));
+  })();
 
   return (
     <div className="bg-white shadow rounded p-4 space-y-2">
@@ -56,12 +85,12 @@ const PartDetail: React.FC<PartDetailProps> = ({ partId }) => {
       <p><strong>Brand:</strong> {p.brand?.name}</p>
       <p><strong>Category:</strong> {p.category?.name}</p>
       <div className="flex flex-wrap">
-        {validImages.map((img: any) => (
+        {validImages.map((url: string, idx: number) => (
           <img
-            key={img.id}
-            src={getImageUrl(img)}
-            alt={p.name || img.id}
-            className="w-32 h-32 object-cover m-1 rounded"
+            key={idx}
+            src={url}
+            alt={p.name || `Image ${idx + 1}`}
+            className="w-32 h-32 object-cover m-1 rounded border border-slate-200"
             onError={(e) => {
               (e.currentTarget as HTMLElement).style.display = 'none';
             }}

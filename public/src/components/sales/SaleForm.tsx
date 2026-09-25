@@ -12,14 +12,44 @@ interface SaleFormProps {
 }
 
 const getImageUrl = (item: any) => {
-  const image = item?.part?.images?.[0];
-  if (!image) return null;
+  const part = item?.part;
+  const image = part?.images?.[0];
 
-  if (image.thumb_url || image.url) return image.thumb_url || image.url;
+  if (image) {
+    const thumbUrl = image.thumb_url || image.url;
+    if (thumbUrl && typeof thumbUrl === 'string' && !thumbUrl.endsWith('thumb_') && thumbUrl !== '0') return thumbUrl;
 
-  const base = axiosClient.defaults.baseURL?.replace(/\/api\/?$/, '') || window.location.origin;
-  const path = image.thumb_path || image.file_path;
-  return path ? `${base}/storage/${path}` : null;
+    const base = axiosClient.defaults.baseURL?.replace(/\/api\/?$/, '') || window.location.origin;
+    const path = String(image.thumb_path || image.file_path || '').trim();
+    if (path && path !== '0' && path !== 'false' && !path.endsWith('thumb_') && !path.endsWith('/thumb_')) {
+      if (/^(https?:\/\/|data:image\/)/i.test(path)) return path;
+      return `${base}/storage/${path.replace(/^\/?storage\//, '').replace(/^\/+/, '')}`;
+    }
+  }
+
+  // Fallback to inline Base64 image stored in technical_specs
+  const specs = part?.technical_specs;
+  if (specs) {
+    if (Array.isArray(specs)) {
+      for (const s of specs) {
+        try {
+          const parsed = typeof s === 'string' ? JSON.parse(s) : s;
+          if (parsed?.key === '__image_data' || parsed?.key === 'image') {
+            if (typeof parsed?.value === 'string' && (parsed.value.startsWith('data:image/') || parsed.value.startsWith('http'))) {
+              return parsed.value;
+            }
+          }
+        } catch {}
+      }
+    } else if (typeof specs === 'object') {
+      const val = specs.__image_data || specs.image;
+      if (typeof val === 'string' && (val.startsWith('data:image/') || val.startsWith('http'))) {
+        return val;
+      }
+    }
+  }
+
+  return null;
 };
 
 const formatMoney = (value: any) => {
@@ -148,7 +178,14 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSuccess }) => {
                     <div className="flex gap-3">
                       <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-100">
                         {imageUrl ? (
-                          <img src={imageUrl} alt={item.part?.name || 'Part'} className="h-full w-full object-cover" />
+                          <img
+                            src={imageUrl}
+                            alt={item.part?.name || 'Part'}
+                            className="h-full w-full object-cover"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLElement).style.display = 'none';
+                            }}
+                          />
                         ) : (
                           <FiPackage className="h-7 w-7 text-gray-400" />
                         )}

@@ -148,14 +148,50 @@ export default function PartList({
     return `${base}/storage/${raw.replace(/^\/?storage\//, '').replace(/^\/+/, '')}`;
   };
 
+  const getPartImageUrl = (part: any) => {
+    if (!part) return null;
+    if (Array.isArray(part.images)) {
+      for (const img of part.images) {
+        const url = getImageUrl(img);
+        if (url) return url;
+      }
+    }
+    const specs = part.technical_specs;
+    if (specs) {
+      if (Array.isArray(specs)) {
+        for (const s of specs) {
+          try {
+            const parsed = typeof s === 'string' ? JSON.parse(s) : s;
+            if (parsed?.key === '__image_data' || parsed?.key === 'image') {
+              if (typeof parsed?.value === 'string' && (parsed.value.startsWith('data:image/') || parsed.value.startsWith('http'))) {
+                return parsed.value;
+              }
+            }
+          } catch {}
+        }
+      } else if (typeof specs === 'object') {
+        const val = specs.__image_data || specs.image;
+        if (typeof val === 'string' && (val.startsWith('data:image/') || val.startsWith('http'))) {
+          return val;
+        }
+      }
+    }
+    return null;
+  };
+
   const parseSpecs = (specs: any) => {
     try {
       if (!specs) return [];
+      let list: any[] = [];
       if (typeof specs === "string") {
         const parsed = JSON.parse(specs);
-        return Array.isArray(parsed) ? parsed.map((i: any) => typeof i === "string" ? JSON.parse(i) : i) : [];
+        list = Array.isArray(parsed) ? parsed.map((i: any) => typeof i === "string" ? JSON.parse(i) : i) : [];
+      } else if (Array.isArray(specs)) {
+        list = specs.map((i: any) => typeof i === "string" ? JSON.parse(i) : i);
+      } else if (typeof specs === "object") {
+        list = Object.entries(specs).map(([key, value]) => ({ key, value }));
       }
-      return Array.isArray(specs) ? specs : [];
+      return list.filter((s: any) => s && s.key && s.key !== '__image_data');
     } catch { return []; }
   };
 
@@ -319,12 +355,13 @@ export default function PartList({
                           className="h-full w-full"
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (p.images?.[0]) setPreviewImage(getImageUrl(p.images[0]));
+                            const imgUrl = getPartImageUrl(p);
+                            if (imgUrl) setPreviewImage(imgUrl);
                           }}
                         >
-                          {getImageUrl(p.images?.[0]) ? (
+                          {getPartImageUrl(p) ? (
                             <img
-                              src={getImageUrl(p.images[0])!}
+                              src={getPartImageUrl(p)!}
                               className="w-full h-full object-cover"
                               alt={p.name || "Part image"}
                               onError={(e) => {
@@ -456,29 +493,34 @@ export default function PartList({
                                   <FiImage /> Visual Reference
                                 </h4>
                                 <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                                  {p.images?.filter((img: any) => Boolean(getImageUrl(img))).length ? (
-                                    p.images
-                                      .filter((img: any) => Boolean(getImageUrl(img)))
-                                      .map((img: any) => {
-                                        const url = getImageUrl(img)!;
-                                        return (
-                                          <img 
-                                            key={img.id}
-                                            src={url}
-                                            onClick={() => setPreviewImage(url)}
-                                            alt={p.name || "Part image"}
-                                            className="h-24 w-32 object-cover rounded-xl border-4 border-white shadow-sm cursor-zoom-in hover:scale-105 transition-transform"
-                                            onError={(e) => {
-                                              (e.currentTarget as HTMLElement).style.display = 'none';
-                                            }}
-                                          />
-                                        );
-                                      })
-                                  ) : (
-                                    <div className="text-slate-400 italic text-sm p-4 bg-white rounded-xl border border-slate-100">
-                                      No images uploaded
-                                    </div>
-                                  )}
+                                  {(() => {
+                                    const validFromImages = (p.images || [])
+                                      .map((img: any) => getImageUrl(img))
+                                      .filter(Boolean);
+                                    const inlineImg = getPartImageUrl(p);
+                                    const allImages = Array.from(new Set([...(inlineImg ? [inlineImg] : []), ...validFromImages]));
+
+                                    if (allImages.length > 0) {
+                                      return allImages.map((url: string, imgIdx: number) => (
+                                        <img 
+                                          key={imgIdx}
+                                          src={url}
+                                          onClick={() => setPreviewImage(url)}
+                                          alt={p.name || "Part image"}
+                                          className="h-24 w-32 object-cover rounded-xl border-4 border-white shadow-sm cursor-zoom-in hover:scale-105 transition-transform"
+                                          onError={(e) => {
+                                            (e.currentTarget as HTMLElement).style.display = 'none';
+                                          }}
+                                        />
+                                      ));
+                                    }
+
+                                    return (
+                                      <div className="text-slate-400 italic text-sm p-4 bg-white rounded-xl border border-slate-100">
+                                        No images uploaded
+                                      </div>
+                                    );
+                                  })()}
                                 </div>
                               </div>
 

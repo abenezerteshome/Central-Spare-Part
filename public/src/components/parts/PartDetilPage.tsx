@@ -68,7 +68,36 @@ const PartDetailPage: React.FC = () => {
     return `${storageBase}/storage/${String(path).replace(/^\/?storage\//, '').replace(/^\/+/, '')}`;
   };
 
-  const validImages = (data.images || []).filter((img: any) => Boolean(getImageUrl(img)));
+  const getPartImageUrl = (part: any) => {
+    if (!part) return null;
+    const specs = part.technical_specs;
+    if (specs) {
+      if (Array.isArray(specs)) {
+        for (const s of specs) {
+          try {
+            const parsed = typeof s === 'string' ? JSON.parse(s) : s;
+            if (parsed?.key === '__image_data' || parsed?.key === 'image') {
+              if (typeof parsed?.value === 'string' && (parsed.value.startsWith('data:image/') || parsed.value.startsWith('http'))) {
+                return parsed.value;
+              }
+            }
+          } catch {}
+        }
+      } else if (typeof specs === 'object') {
+        const val = specs.__image_data || specs.image;
+        if (typeof val === 'string' && (val.startsWith('data:image/') || val.startsWith('http'))) {
+          return val;
+        }
+      }
+    }
+    return null;
+  };
+
+  const validImages = (() => {
+    const fromImages = (data.images || []).map((img: any) => getImageUrl(img)).filter(Boolean);
+    const inline = getPartImageUrl(data);
+    return Array.from(new Set([...(inline ? [inline] : []), ...fromImages]));
+  })();
 
   return (
     <div className="bg-white shadow-md p-6 rounded-lg">
@@ -98,11 +127,11 @@ const PartDetailPage: React.FC = () => {
 
       {validImages.length > 0 && (
         <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {validImages.map((img: any) => (
+          {validImages.map((url: string, idx: number) => (
             <img
-              key={img.id}
-              src={getImageUrl(img)}
-              alt={data.name || img.id}
+              key={idx}
+              src={url}
+              alt={data.name || `Image ${idx + 1}`}
               className="w-full h-40 object-cover rounded border"
               onError={(e) => {
                 (e.currentTarget as HTMLElement).style.display = 'none';
