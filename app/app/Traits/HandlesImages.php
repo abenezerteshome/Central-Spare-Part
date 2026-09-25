@@ -26,6 +26,9 @@ trait HandlesImages
         if (!empty($awsBucket) && !empty($awsKey)) {
             try {
                 $path = $file->storePublicly($folder, 's3');
+                if (!$path) {
+                    throw new \RuntimeException('S3 storePublicly failed (returned false)');
+                }
                 $thumbPath = null;
 
                 try {
@@ -42,7 +45,10 @@ trait HandlesImages
                     $encoder = $extension === 'png' ? new PngEncoder() : new JpegEncoder(quality: 75);
                     $encoded = $img->encode($encoder);
 
-                    Storage::disk('s3')->put($thumbPath, $encoded, 'public');
+                    $putOk = Storage::disk('s3')->put($thumbPath, $encoded, 'public');
+                    if (!$putOk) {
+                        $thumbPath = null;
+                    }
                 } catch (\Throwable $e) {
                     Log::warning('HandlesImages: S3 thumbnail creation failed', [
                         'error' => $e->getMessage(),
@@ -56,14 +62,47 @@ trait HandlesImages
                     'thumb' => $thumbPath,
                 ];
             } catch (\Throwable $e) {
-                // Log so it appears in Vercel / Laravel logs
-                Log::error('HandlesImages: S3 upload failed, falling back to base64 Data URL', [
+                Log::warning('HandlesImages: S3 upload failed, trying local public disk', [
                     'error'  => $e->getMessage(),
                     'bucket' => $awsBucket,
                     'file'   => $file->getClientOriginalName(),
                 ]);
-                // Fall through to Data URL fallback below
             }
+        }
+
+        // 2. Try Local Public Storage (for persistent VPS / hosting like LiteSpeed)
+        try {
+            $path = $file->storePublicly($folder, 'public');
+            if ($path) {
+                $thumbPath = null;
+                try {
+                    $manager = new ImageManager(new Driver());
+                    $img = $manager->read($file->getRealPath())
+                        ->resize(400, 300, function ($constraint) {
+                            $constraint->aspectRatio();
+                            $constraint->upsize();
+                        });
+
+                    $thumbName = 'thumb_' . basename($path);
+                    $thumbPath = $folder . '/' . $thumbName;
+                    $extension = strtolower(pathinfo($file->getClientOriginalName(), PATHINFO_EXTENSION));
+                    $encoder = $extension === 'png' ? new PngEncoder() : new JpegEncoder(quality: 75);
+                    $encoded = $img->encode($encoder);
+
+                    Storage::disk('public')->put($thumbPath, $encoded, 'public');
+                } catch (\Throwable $e) {
+                    $thumbPath = null;
+                }
+
+                return [
+                    'path'  => $path,
+                    'thumb' => $thumbPath,
+                ];
+            }
+        } catch (\Throwable $e) {
+            Log::info('HandlesImages: local public disk store failed, falling back to base64 Data URL', [
+                'error' => $e->getMessage(),
+            ]);
         }
 
         // 2. Fallback for Serverless / Vercel without external S3:
