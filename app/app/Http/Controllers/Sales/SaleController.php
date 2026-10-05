@@ -27,6 +27,15 @@
    {
       $payload = $request->validated();
       $sale = $this->sales->createSale($payload, auth()->id());
+
+      \App\Services\ActivityLogger::log('Create', 'Sales', "Sale recorded for buyer: {$sale->buyer_name} (Total: {$sale->total_price} Birr)", 'sales', $sale->id, [
+         'buyer_name' => $sale->buyer_name,
+         'buyer_phone' => $sale->buyer_phone,
+         'total_price' => $sale->total_price,
+         'status' => $sale->status,
+         'items_count' => count($request->input('items', [])),
+      ]);
+
       return $this->success(new \App\Http\Resources\SaleResource($sale), 'Sale recorded', 201);
    }
    
@@ -54,6 +63,12 @@
    {
       $data = request()->validate(['status' => 'required|string|in:pending,buyed,rejected']);
       $sale = $this->sales->changeStatus($id, $data['status'], auth()->id());
+
+      \App\Services\ActivityLogger::log('Update', 'Sales', "Updated sale #{$id} status to '{$data['status']}'", 'sales', $id, [
+         'status' => $data['status'],
+         'buyer_name' => $sale->buyer_name,
+      ]);
+
       return $this->success(new \App\Http\Resources\SaleResource($sale), 'Status updated');
    }
 
@@ -63,8 +78,13 @@
    public function destroy($id)
    {
       $sale = \App\Models\Sale::findOrFail($id);
+      $buyer = $sale->buyer_name;
+      $total = $sale->total_price;
       $sale->items()->delete();
       $sale->delete();
+
+      \App\Services\ActivityLogger::log('Delete', 'Sales', "Deleted sale #{$id} for buyer {$buyer} ({$total} Birr)", 'sales', $id);
+
       return $this->success(null, 'Sale deleted');
    }
 }

@@ -17,6 +17,7 @@ use App\Http\Controllers\Reports\ReportController;
 
 use App\Http\Controllers\Search\SearchController;
 use App\Http\Controllers\ShelfController;
+use App\Http\Controllers\ActivityLogController;
 
 Route::middleware(['auth:sanctum'])->get('/search', [SearchController::class, 'globalSearch']);
 
@@ -55,6 +56,13 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::put('/users/{id}/unblock', [UserController::class, 'unblockUser']);
     Route::put('/users/{id}/role', [UserController::class, 'changeRole']);
     Route::delete('/users/{id}', [UserController::class, 'destroy']);
+
+    // Activity Logs (Admin Only)
+    Route::prefix('activity-logs')->group(function () {
+        Route::get('/', [ActivityLogController::class, 'index']);
+        Route::get('/stats', [ActivityLogController::class, 'stats']);
+        Route::get('/{id}', [ActivityLogController::class, 'show']);
+    });
 });
 
 // --------------------------

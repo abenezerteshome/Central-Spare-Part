@@ -240,6 +240,16 @@ class PartController extends Controller
             $data['agent_id'] = $agentIdForResponse;
         }
 
+        \App\Services\ActivityLogger::log('Create', 'Parts', "Created part: {$part->name} (" . ($part->part_number ?: $part->sku ?: 'No SKU') . ")", 'parts', $part->id, [
+            'name' => $part->name,
+            'part_number' => $part->part_number,
+            'sku' => $part->sku,
+            'condition' => $part->condition,
+            'shelf' => $part->shelf,
+            'unit_price' => $part->unit_price,
+            'unit_cost' => $part->unit_cost,
+        ]);
+
         return response()->json([
             'message' => 'Part created successfully',
             'data' => $data,
@@ -389,13 +399,28 @@ class PartController extends Controller
             $part->save();
         }
 
+        \App\Services\ActivityLogger::log('Update', 'Parts', "Updated part: {$part->name} (" . ($part->part_number ?: $part->sku ?: 'No SKU') . ")", 'parts', $part->id, [
+            'name' => $part->name,
+            'part_number' => $part->part_number,
+            'sku' => $part->sku,
+            'condition' => $part->condition,
+            'shelf' => $part->shelf,
+            'unit_price' => $part->unit_price,
+            'unit_cost' => $part->unit_cost,
+        ]);
+
         return $this->success($part->load('items', 'images', 'agent'), 'Updated');
     }
 
     public function destroy($id)
     {
         $part = Part::findOrFail($id);
+        $partName = $part->name;
+        $partNumber = $part->part_number ?: $part->sku ?: 'No SKU';
         $part->delete();
+
+        \App\Services\ActivityLogger::log('Delete', 'Parts', "Deleted part: {$partName} ({$partNumber})", 'parts', $id);
+
         return $this->success(null, 'Deleted', 204);
     }
 }

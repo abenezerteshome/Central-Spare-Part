@@ -15,7 +15,8 @@ import {
   FiArchive, 
   FiFileText, 
   FiChevronDown,
-  FiLogOut
+  FiLogOut,
+  FiActivity
 } from 'react-icons/fi';
 
 // Define the type for our navigation items
@@ -76,6 +77,7 @@ const navItems: NavItem[] = [
   { label: 'Sales', icon: FiTrendingUp, path: '/dashboard/sales' },
   { label: 'Inventory', icon: FiArchive, path: '/dashboard/inventory' },
   { label: 'Reports', icon: FiFileText, path: '/dashboard/reports' },
+  { label: 'Activity Logs', icon: FiActivity, path: '/dashboard/activity-logs', adminOnly: true },
 ];
 
 // --- Sub-component for clarity ---

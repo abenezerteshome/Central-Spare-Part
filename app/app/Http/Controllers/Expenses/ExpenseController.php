@@ -44,6 +44,12 @@ class ExpenseController extends Controller
 
         $expense = Expense::create($data);
 
+        \App\Services\ActivityLogger::log('Create', 'Expenses', "Created expense: {$expense->title} ({$expense->amount} Birr)", 'expenses', $expense->id, [
+            'title' => $expense->title,
+            'amount' => $expense->amount,
+            'category' => $expense->category,
+        ]);
+
         return $this->success($expense, 'Expense created', 201);
     }
 
@@ -75,6 +81,12 @@ class ExpenseController extends Controller
 
         $expense->update($data);
 
+        \App\Services\ActivityLogger::log('Update', 'Expenses', "Updated expense: {$expense->title} ({$expense->amount} Birr)", 'expenses', $expense->id, [
+            'title' => $expense->title,
+            'amount' => $expense->amount,
+            'category' => $expense->category,
+        ]);
+
         return $this->success($expense, 'Expense updated');
     }
 
@@ -84,7 +96,11 @@ class ExpenseController extends Controller
     public function destroy($id)
     {
         $expense = Expense::findOrFail($id);
+        $title = $expense->title;
+        $amount = $expense->amount;
         $expense->delete();
+
+        \App\Services\ActivityLogger::log('Delete', 'Expenses', "Deleted expense: {$title} ({$amount} Birr)", 'expenses', $id);
 
         return $this->success(null, 'Expense deleted', 204);
     }

@@ -27,6 +27,7 @@ const CategoriesPage = lazy(() => import('../pages/categories/CategoriesPage'));
 const SparePartShopsList = lazy(() => import('../pages/SparePartShopsList'));
 const SparePartShopForm = lazy(() => import('../pages/SparePartShopForm'));
 const UsersPage = lazy(() => import('../pages/users/UsersPage'));
+const ActivityLogsPage = lazy(() => import('../pages/Dashboard/ActivityLogsPage'));
 
 // Small helper left eager
 import BrandsForm from '../components/brands/BrandsForm';
@@ -193,6 +194,14 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute adminOnly>
               <UsersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/activity-logs"
+          element={
+            <ProtectedRoute adminOnly>
+              <ActivityLogsPage />
             </ProtectedRoute>
           }
         />

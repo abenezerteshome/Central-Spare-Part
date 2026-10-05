@@ -40,6 +40,12 @@ class InventoryController extends Controller
             $data['note'] ?? 'Restock'
         );
 
+        \App\Services\ActivityLogger::log('Adjust', 'Inventory', "Increased stock for part item #{$item->id}: +{$data['qty']} pcs ({$data['note']})", 'part_items', $item->id, [
+            'adjustment' => "+{$data['qty']}",
+            'qty' => $data['qty'],
+            'note' => $data['note'] ?? 'Restock',
+        ]);
+
         return $this->success($item->fresh(), 'Stock increased');
     }
 
@@ -62,6 +68,12 @@ class InventoryController extends Controller
             auth()->id(),
             $data['note'] ?? 'Manual adjustment'
         );
+
+        \App\Services\ActivityLogger::log('Adjust', 'Inventory', "Decreased stock for part item #{$item->id}: -{$data['qty']} pcs ({$data['note']})", 'part_items', $item->id, [
+            'adjustment' => "-{$data['qty']}",
+            'qty' => $data['qty'],
+            'note' => $data['note'] ?? 'Manual adjustment',
+        ]);
 
         return $this->success($item->fresh(), 'Stock decreased');
     }

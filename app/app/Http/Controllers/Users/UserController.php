@@ -78,6 +78,11 @@ class UserController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
+        \App\Services\ActivityLogger::log('Login', 'Auth', "Admin logged in: {$user->email}", 'users', $user->id, [
+            'email' => $user->email,
+            'role' => $user->role,
+        ], null, null, $user->id);
+
         return response()->json([
             'admin' => $user,
             'user' => $user,
@@ -88,6 +93,10 @@ class UserController extends Controller
 
     public function adminLogout(Request $request)
     {
+        $user = $request->user();
+        if ($user) {
+            \App\Services\ActivityLogger::log('Logout', 'Auth', "Admin logged out: {$user->email}", 'users', $user->id);
+        }
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
@@ -426,6 +435,7 @@ class UserController extends Controller
             }
 
             // 3. If Firebase deletion is successful, delete the user from the local database
+            \App\Services\ActivityLogger::log('Delete', 'Users', "Deleted user: {$user->name} ({$user->email})", 'users', $user->id);
             $user->delete();
 
             // 4. Return the success response
@@ -452,6 +462,8 @@ class UserController extends Controller
    
        $user->status = 'suspended';
        $user->save();
+
+       \App\Services\ActivityLogger::log('Update', 'Users', "Suspended user: {$user->name} ({$user->email})", 'users', $user->id, ['status' => 'suspended']);
    
        return response()->json([
            'message' => 'User blocked successfully.',
@@ -468,6 +480,8 @@ class UserController extends Controller
     
         $user->status = 'active';
         $user->save();
+
+        \App\Services\ActivityLogger::log('Update', 'Users', "Activated user: {$user->name} ({$user->email})", 'users', $user->id, ['status' => 'active']);
     
         return response()->json([
             'message' => 'User unblocked successfully.',
@@ -493,6 +507,8 @@ class UserController extends Controller
     
         $user->role = $request->role;
         $user->save();
+
+        \App\Services\ActivityLogger::log('Update', 'Users', "Changed role of {$user->name} to {$user->role}", 'users', $user->id, ['role' => $user->role]);
     
         return response()->json([
             'message' => 'User role updated successfully.',

@@ -32,6 +32,10 @@ class BrandController extends Controller
 
         $brand = Brand::create($data);
 
+        \App\Services\ActivityLogger::log('Create', 'Brands', "Created brand: {$brand->name}", 'brands', $brand->id, [
+            'name' => $brand->name,
+        ]);
+
         return $this->success($brand, 'Brand created', 201);
     }
 
@@ -58,6 +62,10 @@ class BrandController extends Controller
 
         $brand->update($data);
 
+        \App\Services\ActivityLogger::log('Update', 'Brands', "Updated brand: {$brand->name}", 'brands', $brand->id, [
+            'name' => $brand->name,
+        ]);
+
         return $this->success($brand, 'Brand updated');
     }
 
@@ -67,7 +75,10 @@ class BrandController extends Controller
     public function destroy($id)
     {
         $brand = Brand::findOrFail($id);
+        $name = $brand->name;
         $brand->delete();
+
+        \App\Services\ActivityLogger::log('Delete', 'Brands', "Deleted brand: {$name}", 'brands', $id);
 
         return $this->success(null, 'Brand deleted', 204);
     }

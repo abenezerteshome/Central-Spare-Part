@@ -83,4 +83,10 @@ export const endpoints = {
     LIST: '/shelves',
     CREATE: '/shelves',
   },
+
+  ACTIVITY_LOGS: {
+    LIST: '/activity-logs',
+    STATS: '/activity-logs/stats',
+    DETAIL: (id: string) => `/activity-logs/${id}`,
+  },
 };

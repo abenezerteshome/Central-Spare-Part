@@ -36,6 +36,11 @@ class CategoryController extends Controller
 
         $category = Category::create($data);
 
+        \App\Services\ActivityLogger::log('Create', 'Categories', "Created category: {$category->system}", 'categories', $category->id, [
+            'system' => $category->system,
+            'subsystem' => $category->subsystem,
+        ]);
+
         return $this->success($category, 'Category created', 201);
     }
 
@@ -64,6 +69,11 @@ class CategoryController extends Controller
 
         $category->update($data);
 
+        \App\Services\ActivityLogger::log('Update', 'Categories', "Updated category: {$category->system}", 'categories', $category->id, [
+            'system' => $category->system,
+            'subsystem' => $category->subsystem,
+        ]);
+
         return $this->success($category, 'Category updated');
     }
 
@@ -73,7 +83,10 @@ class CategoryController extends Controller
     public function destroy($id)
     {
         $category = Category::findOrFail($id);
+        $name = $category->system;
         $category->delete();
+
+        \App\Services\ActivityLogger::log('Delete', 'Categories', "Deleted category: {$name}", 'categories', $id);
 
         return $this->success(null, 'Category deleted', 204);
     }

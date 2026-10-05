@@ -34,6 +34,11 @@ class AgentController extends Controller
 
         $agent = Agent::create($data);
 
+        \App\Services\ActivityLogger::log('Create', 'Agents', "Created agent: {$agent->name}", 'agents', $agent->id, [
+            'name' => $agent->name,
+            'phone' => $agent->phone,
+        ]);
+
         return $this->success($agent, 'Agent created', 201);
     }
 
@@ -62,6 +67,11 @@ class AgentController extends Controller
 
         $agent->update($data);
 
+        \App\Services\ActivityLogger::log('Update', 'Agents', "Updated agent: {$agent->name}", 'agents', $agent->id, [
+            'name' => $agent->name,
+            'phone' => $agent->phone,
+        ]);
+
         return $this->success($agent, 'Agent updated');
     }
 
@@ -71,7 +81,10 @@ class AgentController extends Controller
     public function destroy($id)
     {
         $agent = Agent::findOrFail($id);
+        $name = $agent->name;
         $agent->delete();
+
+        \App\Services\ActivityLogger::log('Delete', 'Agents', "Deleted agent: {$name}", 'agents', $id);
 
         return $this->success(null, 'Agent deleted', 204);
     }
