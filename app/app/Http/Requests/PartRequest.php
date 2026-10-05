@@ -65,6 +65,7 @@ class PartRequest extends FormRequest
             'unit_cost' => 'nullable|numeric|min:0',
             'unit_price' => 'nullable|numeric|min:0',
             'shelf' => 'nullable|string|max:255',
+            'condition' => 'nullable|string|in:new,used,refurb,refurbished',
             'agent_id' => 'nullable|uuid|exists:agents,id',
             'brand_id' => 'nullable|uuid|exists:brands,id',
             'category_id' => 'nullable|integer|exists:categories,id',

@@ -255,7 +255,6 @@ class PartController extends Controller
         if (array_key_exists('is_active', $data)) {
             $data['is_active'] = DB::raw($request->boolean('is_active') ? 'true' : 'false');
         }
-        $part->update($data);
 
         // Handle optional part_item payload on update similar to store()
         $itemDataRaw = $request->input('part_item');
@@ -263,6 +262,15 @@ class PartController extends Controller
         if ($itemDataRaw) {
             $itemData = is_string($itemDataRaw) ? (json_decode($itemDataRaw, true) ?: []) : $itemDataRaw;
         }
+
+        if (!empty($itemData['shelf']) && empty($data['shelf'])) {
+            $data['shelf'] = $itemData['shelf'];
+        }
+        if (!empty($itemData['condition']) && empty($data['condition'])) {
+            $data['condition'] = $itemData['condition'];
+        }
+
+        $part->update($data);
 
         if (!empty($itemData)) {
             // ensure store_id exists or fallback to first store

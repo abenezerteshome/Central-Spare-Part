@@ -99,34 +99,53 @@ const PartDetailPage: React.FC = () => {
     return Array.from(new Set([...(inline ? [inline] : []), ...fromImages]));
   })();
 
+  const getPartCondition = (p: any) => {
+    const raw = String(p?.condition || p?.items?.[0]?.condition || 'new').toLowerCase().trim();
+    if (raw === 'used') return { label: 'Used', className: 'text-amber-700 bg-amber-50 border-amber-200' };
+    if (raw === 'refurb' || raw === 'refurbished') return { label: 'Refurbished', className: 'text-purple-700 bg-purple-50 border-purple-200' };
+    return { label: 'New', className: 'text-emerald-700 bg-emerald-50 border-emerald-200' };
+  };
+
+  const cond = getPartCondition(data);
+  const shelf = data.shelf || data.items?.[0]?.shelf || 'N/A';
+
   return (
-    <div className="bg-white shadow-md p-6 rounded-lg">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-semibold">{data.name}</h2>
+    <div className="bg-white shadow-md p-6 rounded-lg space-y-4">
+      <div className="flex justify-between items-center border-b pb-4">
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-semibold text-slate-800">{data.name}</h2>
+          <span className={`inline-flex items-center text-xs font-black uppercase px-2.5 py-1 rounded-lg border ${cond.className}`}>
+            {cond.label}
+          </span>
+        </div>
         <div className="space-x-2">
           <button
             onClick={() => navigate(`/dashboard/parts/edit/${id}`)}
-            className="bg-blue-600 text-white px-4 py-2 rounded"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold text-sm shadow transition-colors"
           >
             Edit
           </button>
           <button
             onClick={handleDelete}
-            className="bg-red-600 text-white px-4 py-2 rounded"
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold text-sm shadow transition-colors"
           >
             Delete
           </button>
         </div>
       </div>
 
-      <p><strong>Part Number:</strong> {data.part_number}</p>
-  <p><strong>Agent:</strong> {data.agent?.name || data.agent_name || data.part_item?.agent?.name || '-'}</p>
-      <p><strong>Brand:</strong> {data.brand?.name}</p>
-      <p><strong>Category:</strong> {data.category?.system}</p>
-      <p><strong>Description:</strong> {data.description}</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+        <p><strong>Part Number:</strong> {data.part_number || data.sku || '-'}</p>
+        <p><strong>Condition:</strong> <span className={`inline-block ml-1 font-bold text-xs uppercase px-2 py-0.5 rounded border ${cond.className}`}>{cond.label}</span></p>
+        <p><strong>Shelf / Location:</strong> <span className="inline-block ml-1 font-bold text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded border border-blue-100">{shelf}</span></p>
+        <p><strong>Agent:</strong> {data.agent?.name || data.agent_name || data.part_item?.agent?.name || '-'}</p>
+        <p><strong>Brand:</strong> {data.brand?.name || '-'}</p>
+        <p><strong>Category:</strong> {data.category?.system || data.category?.name || '-'}</p>
+        <p className="md:col-span-2"><strong>Description:</strong> {data.description || 'No description'}</p>
+      </div>
 
       {validImages.length > 0 && (
-        <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pt-2 border-t">
           {validImages.map((url: string, idx: number) => (
             <img
               key={idx}

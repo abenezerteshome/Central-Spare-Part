@@ -78,25 +78,50 @@ const PartDetail: React.FC<PartDetailProps> = ({ partId }) => {
     return Array.from(new Set([...(inline ? [inline] : []), ...fromImages]));
   })();
 
+  const getPartCondition = (data: any) => {
+    const raw = String(data?.condition || data?.items?.[0]?.condition || 'new').toLowerCase().trim();
+    if (raw === 'used') return { label: 'Used', className: 'text-amber-700 bg-amber-50 border-amber-200' };
+    if (raw === 'refurb' || raw === 'refurbished') return { label: 'Refurbished', className: 'text-purple-700 bg-purple-50 border-purple-200' };
+    return { label: 'New', className: 'text-emerald-700 bg-emerald-50 border-emerald-200' };
+  };
+
+  const cond = getPartCondition(p);
+  const shelf = p.shelf || p.items?.[0]?.shelf || 'N/A';
+
   return (
-    <div className="bg-white shadow rounded p-4 space-y-2">
-      <h2 className="text-xl font-bold">{p.name}</h2>
-      <p><strong>Part Number:</strong> {p.part_number}</p>
-      <p><strong>Brand:</strong> {p.brand?.name}</p>
-      <p><strong>Category:</strong> {p.category?.name}</p>
-      <div className="flex flex-wrap">
-        {validImages.map((url: string, idx: number) => (
-          <img
-            key={idx}
-            src={url}
-            alt={p.name || `Image ${idx + 1}`}
-            className="w-32 h-32 object-cover m-1 rounded border border-slate-200"
-            onError={(e) => {
-              (e.currentTarget as HTMLElement).style.display = 'none';
-            }}
-          />
-        ))}
+    <div className="bg-white shadow rounded p-4 space-y-3">
+      <div className="flex items-center justify-between border-b pb-2">
+        <h2 className="text-xl font-bold text-slate-800">{p.name}</h2>
+        <span className={`inline-flex items-center text-xs font-black uppercase px-2.5 py-1 rounded-lg border ${cond.className}`}>
+          {cond.label}
+        </span>
       </div>
+      <div className="grid grid-cols-2 gap-2 text-sm">
+        <p><strong>Part Number:</strong> {p.part_number || p.sku || 'N/A'}</p>
+        <p><strong>Brand:</strong> {p.brand?.name || 'Generic'}</p>
+        <p><strong>Category:</strong> {p.category?.system || p.category?.name || 'N/A'}</p>
+        <p>
+          <strong>Shelf:</strong>{' '}
+          <span className="inline-block px-2 py-0.5 bg-blue-50 text-blue-700 font-bold rounded border border-blue-100 text-xs">
+            {shelf}
+          </span>
+        </p>
+      </div>
+      {validImages.length > 0 && (
+        <div className="flex flex-wrap pt-2">
+          {validImages.map((url: string, idx: number) => (
+            <img
+              key={idx}
+              src={url}
+              alt={p.name || `Image ${idx + 1}`}
+              className="w-32 h-32 object-cover m-1 rounded border border-slate-200"
+              onError={(e) => {
+                (e.currentTarget as HTMLElement).style.display = 'none';
+              }}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

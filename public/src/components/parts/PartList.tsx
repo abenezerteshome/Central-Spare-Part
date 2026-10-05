@@ -34,6 +34,7 @@ export default function PartList({
   const toast = useToast();
 
   const [search, setSearch] = useState(initialSearch || "");
+  const [conditionFilter, setConditionFilter] = useState<string>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [showStockTotal, setShowStockTotal] = useState(false);
@@ -85,34 +86,96 @@ export default function PartList({
     return 0;
   };
 
+  const getPartCondition = (part: any) => {
+    const raw = String(part?.condition || part?.items?.[0]?.condition || "new").toLowerCase().trim();
+    if (raw === "used") {
+      return {
+        label: "Used",
+        raw: "used",
+        color: "text-amber-700",
+        bg: "bg-amber-50",
+        border: "border-amber-200",
+        dot: "bg-amber-500",
+      };
+    }
+    if (raw === "refurb" || raw === "refurbished") {
+      return {
+        label: "Refurbished",
+        raw: "refurb",
+        color: "text-purple-700",
+        bg: "bg-purple-50",
+        border: "border-purple-200",
+        dot: "bg-purple-500",
+      };
+    }
+    return {
+      label: "New",
+      raw: "new",
+      color: "text-emerald-700",
+      bg: "bg-emerald-50",
+      border: "border-emerald-200",
+      dot: "bg-emerald-500",
+    };
+  };
+
+  const getPartShelf = (part: any) => {
+    const shelf = part?.shelf || part?.items?.[0]?.shelf;
+    if (!shelf || shelf === "0" || shelf === "null" || shelf === "false") return "-";
+    return String(shelf).trim();
+  };
+
   const indexedParts = useMemo(() => {
-    return partsList.map((part: any) => ({
-      part,
-      searchText: [
-        part?.name,
-        part?.part_number,
-        part?.sku,
-        part?.brand?.name,
-        part?.category?.system,
-        part?.category?.name,
-        part?.description,
-        part?.agent?.name,
-        part?.items?.[0]?.agent?.name,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase(),
-    }));
+    return partsList.map((part: any) => {
+      const cond = getPartCondition(part);
+      const shelf = getPartShelf(part);
+      return {
+        part,
+        cond,
+        shelf,
+        searchText: [
+          part?.name,
+          part?.part_number,
+          part?.sku,
+          part?.brand?.name,
+          part?.category?.system,
+          part?.category?.name,
+          part?.description,
+          part?.agent?.name,
+          part?.items?.[0]?.agent?.name,
+          shelf !== "-" ? shelf : null,
+          shelf !== "-" ? `shelf ${shelf}` : null,
+          cond.label,
+          cond.raw,
+          cond.raw === "refurb" ? "refurbished" : null,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase(),
+      };
+    });
   }, [partsList]);
 
   const filteredParts = useMemo(() => {
-    const terms = search.toLowerCase().trim().split(/\s+/).filter(Boolean);
-    if (!terms.length) return partsList;
+    let list = indexedParts;
 
-    return indexedParts
+    if (conditionFilter !== "all") {
+      list = list.filter(({ cond }: any) => {
+        if (conditionFilter === "refurb") {
+          return cond.raw === "refurb" || cond.raw === "refurbished";
+        }
+        return cond.raw === conditionFilter;
+      });
+    }
+
+    const terms = search.toLowerCase().trim().split(/\s+/).filter(Boolean);
+    if (!terms.length) {
+      return list.map(({ part }: any) => part);
+    }
+
+    return list
       .filter(({ searchText }: any) => terms.every((term: string) => searchText.includes(term)))
       .map(({ part }: any) => part);
-  }, [search, partsList, indexedParts]);
+  }, [search, conditionFilter, indexedParts]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure? This action will permanently remove this part.")) return;
@@ -235,6 +298,21 @@ export default function PartList({
         </div>
 
         <div className="flex w-full flex-wrap items-center gap-2 xl:w-auto">
+          {/* Condition Filter */}
+          <div className="flex items-center gap-2 px-3 py-2.5 bg-white border border-slate-200 rounded-xl shadow-sm text-xs font-bold text-slate-600">
+            <span className="text-slate-400 font-extrabold uppercase tracking-wider text-[10px]">Condition:</span>
+            <select
+              value={conditionFilter}
+              onChange={(e) => setConditionFilter(e.target.value)}
+              className="bg-transparent font-black text-slate-800 outline-none cursor-pointer"
+            >
+              <option value="all">All Conditions</option>
+              <option value="new">New</option>
+              <option value="used">Used</option>
+              <option value="refurb">Refurbished</option>
+            </select>
+          </div>
+
           <button
             type="button"
             onClick={handleRefresh}
@@ -284,10 +362,12 @@ export default function PartList({
             <FiRefreshCw size={16} className="animate-spin text-blue-500" />
             Loading parts...
           </div>
-          <div className="min-w-[1100px] space-y-3 p-4">
+          <div className="min-w-[1220px] space-y-3 p-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="grid grid-cols-[50px_minmax(180px,1.2fr)_100px_110px_120px_85px_130px_125px_110px] gap-3 items-center">
+              <div key={i} className="grid grid-cols-[50px_minmax(180px,1.2fr)_100px_110px_100px_100px_115px_80px_130px_110px_105px] gap-3 items-center">
                 <div className="h-10 w-10 bg-slate-100 animate-pulse rounded-lg" />
+                <div className="h-4 bg-slate-100 animate-pulse rounded" />
+                <div className="h-4 bg-slate-100 animate-pulse rounded" />
                 <div className="h-4 bg-slate-100 animate-pulse rounded" />
                 <div className="h-4 bg-slate-100 animate-pulse rounded" />
                 <div className="h-4 bg-slate-100 animate-pulse rounded" />
@@ -317,13 +397,15 @@ export default function PartList({
               Updating parts...
             </div>
           )}
-          <div className="min-w-[1100px]">
+          <div className="min-w-[1220px]">
             {/* Table Header */}
-            <div className="sticky top-0 z-10 grid grid-cols-[50px_minmax(180px,1.2fr)_100px_110px_120px_85px_130px_125px_110px] items-center gap-3 px-4 py-3.5 bg-slate-50 border-b border-slate-200 text-[11px] font-black uppercase tracking-widest text-slate-400">
+            <div className="sticky top-0 z-10 grid grid-cols-[50px_minmax(180px,1.2fr)_100px_110px_100px_100px_115px_80px_130px_110px_105px] items-center gap-3 px-4 py-3.5 bg-slate-50 border-b border-slate-200 text-[11px] font-black uppercase tracking-widest text-slate-400">
               <span>Img</span>
               <span>Part</span>
               <span>Brand</span>
               <span>Category</span>
+              <span>Condition</span>
+              <span>Shelf</span>
               <span>Agent</span>
               <span>Qty</span>
               <span>Price</span>
@@ -343,6 +425,8 @@ export default function PartList({
               filteredParts.map((p: any, index: number) => {
                 const totalQty = getTotalQuantity(p);
                 const agentName = getAgentName(p);
+                const condInfo = getPartCondition(p);
+                const shelfNum = getPartShelf(p);
 
                 return (
                   <div key={p.id} className="border-b border-slate-100 last:border-b-0">
@@ -351,7 +435,7 @@ export default function PartList({
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       onClick={() => setExpandedId(expandedId === p.id ? null : p.id)}
-                      className={`grid grid-cols-[50px_minmax(180px,1.2fr)_100px_110px_120px_85px_130px_125px_110px] items-center gap-3 px-4 py-3 transition-colors ${
+                      className={`grid grid-cols-[50px_minmax(180px,1.2fr)_100px_110px_100px_100px_115px_80px_130px_110px_105px] items-center gap-3 px-4 py-3 transition-colors ${
                         expandedId === p.id ? "bg-blue-50/60 cursor-pointer" : "hover:bg-slate-50 cursor-pointer"
                       }`}
                     >
@@ -408,6 +492,29 @@ export default function PartList({
                         <span className="inline-flex max-w-full bg-blue-50 text-blue-600 text-[11px] font-black uppercase px-2.5 py-1 rounded-lg border border-blue-100 truncate">
                           {p.category?.system || p.category?.name || "PART"}
                         </span>
+                      </div>
+
+                      {/* Condition Badge */}
+                      <div className="min-w-0">
+                        <span className={`inline-flex items-center gap-1.5 text-[11px] font-black uppercase px-2.5 py-1 rounded-lg border ${condInfo.bg} ${condInfo.color} ${condInfo.border}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${condInfo.dot}`} />
+                          {condInfo.label}
+                        </span>
+                      </div>
+
+                      {/* Shelf Number */}
+                      <div className="min-w-0">
+                        {shelfNum !== "-" ? (
+                          <span 
+                            className="inline-flex items-center gap-1.5 text-xs font-black text-slate-700 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200/90 truncate max-w-full"
+                            title={`Shelf: ${shelfNum}`}
+                          >
+                            <FiMapPin size={11} className="text-blue-500 flex-shrink-0" />
+                            <span className="truncate">{shelfNum}</span>
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-300 font-bold px-1">-</span>
+                        )}
                       </div>
 
                       {/* Agent Badge */}
@@ -579,8 +686,17 @@ export default function PartList({
                                     <span className="font-black text-emerald-600 text-sm">{totalQty} pcs</span>
                                   </div>
                                   <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+                                    <span className="text-slate-400 font-bold flex items-center gap-1"><FiLayers size={12}/> Condition:</span>
+                                    <span className={`inline-flex items-center gap-1.5 font-black text-xs px-2 py-0.5 rounded-lg border ${condInfo.bg} ${condInfo.color} ${condInfo.border}`}>
+                                      <span className={`w-1.5 h-1.5 rounded-full ${condInfo.dot}`} />
+                                      {condInfo.label}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
                                     <span className="text-slate-400 font-bold flex items-center gap-1"><FiMapPin size={12}/> Shelf / Location:</span>
-                                    <span className="font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded text-xs">{p.shelf || p.items?.[0]?.shelf || "N/A"}</span>
+                                    <span className="font-black text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-lg border border-blue-100 text-xs">
+                                      {shelfNum !== "-" ? shelfNum : "N/A"}
+                                    </span>
                                   </div>
                                   <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
                                     <span className="text-slate-400 font-bold flex items-center gap-1"><FiUser size={12}/> Agent:</span>

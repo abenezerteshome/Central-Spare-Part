@@ -128,6 +128,7 @@ export default function PartForm({
 
         // -------------------- Part Item & Location --------------------
         setShelf(d.shelf || d.items?.[0]?.shelf || '');
+        setCondition((d.condition || d.items?.[0]?.condition || 'new') as any);
         if (d.items?.length) {
           const item = d.items[0];
           setStoreId(item.store_id || '');
@@ -136,7 +137,6 @@ export default function PartForm({
           setUnitCost(item.unit_cost || '');
           setUnitPrice(item.unit_price || '');
           setSerialNumber(item.serial_number || '');
-          setCondition(item.condition || 'new');
         }
 
         // -------------------- Images --------------------
@@ -266,6 +266,7 @@ export default function PartForm({
       });
 
       if (shelf) formData.append('shelf', shelf);
+      if (condition) formData.append('condition', condition);
       if (effectiveAgentId) formData.append('agent_id', String(effectiveAgentId));
 
       if (effectiveImages && effectiveImages.length > 0) {

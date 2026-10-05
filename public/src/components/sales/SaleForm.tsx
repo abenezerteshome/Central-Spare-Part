@@ -196,6 +196,17 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSuccess }) => {
                         <div className="mt-2 flex flex-wrap gap-1">
                           <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${state.className}`}>{state.label}</span>
                           <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">Qty {item.quantity}</span>
+                          {(() => {
+                            const c = String(item.condition || item.part?.condition || 'new').toLowerCase();
+                            const condLabel = c === 'used' ? 'Used' : (c === 'refurb' || c === 'refurbished') ? 'Refurb' : 'New';
+                            const condColor = c === 'used' ? 'bg-amber-50 text-amber-700 border-amber-200' : (c === 'refurb' || c === 'refurbished') ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                            return <span className={`rounded-full px-2 py-0.5 text-xs font-bold border ${condColor}`}>{condLabel}</span>;
+                          })()}
+                          {(item.shelf || item.part?.shelf) && (
+                            <span className="rounded-full bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 text-xs font-bold">
+                              Shelf {item.shelf || item.part?.shelf}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
