@@ -19,7 +19,8 @@ if ($databaseUrl) {
                 : null,
             'username' => isset($databaseUrlParts['user']) ? rawurldecode($databaseUrlParts['user']) : null,
             'password' => isset($databaseUrlParts['pass']) ? rawurldecode($databaseUrlParts['pass']) : null,
-            'sslmode' => $databaseUrlQuery['sslmode'] ?? 'require',
+            'sslmode' => $databaseUrlQuery['sslmode'] ?? env('DB_SSLMODE', 'prefer'),
+            'search_path' => $databaseUrlQuery['search_path'] ?? env('DB_SCHEMA', 'public'),
         ];
     }
 }
@@ -28,7 +29,8 @@ $pgsqlOptions = [
     PDO::ATTR_EMULATE_PREPARES => true,
 ];
 
-if (extension_loaded('pdo_pgsql') && defined('PDO::PGSQL_ATTR_SSL_MODE')) {
+$sslMode = $databaseUrlConfig['sslmode'] ?? env('DB_SSLMODE', 'prefer');
+if ($sslMode === 'require' && extension_loaded('pdo_pgsql') && defined('PDO::PGSQL_ATTR_SSL_MODE')) {
     $pgsqlOptions[constant('PDO::PGSQL_ATTR_SSL_MODE')] = 'require';
 }
 
@@ -115,16 +117,16 @@ return [
         'pgsql' => [
             'driver' => 'pgsql',
             'url' => $databaseUrl,
-            'host' => $databaseUrlConfig['host'] ?? null,
-            'port' => $databaseUrlConfig['port'] ?? 5432,
-            'database' => $databaseUrlConfig['database'] ?? null,
-            'username' => $databaseUrlConfig['username'] ?? null,
-            'password' => $databaseUrlConfig['password'] ?? null,
+            'host' => $databaseUrlConfig['host'] ?? env('DB_HOST', '127.0.0.1'),
+            'port' => $databaseUrlConfig['port'] ?? env('DB_PORT', '5432'),
+            'database' => $databaseUrlConfig['database'] ?? env('DB_DATABASE', 'forge'),
+            'username' => $databaseUrlConfig['username'] ?? env('DB_USERNAME', 'forge'),
+            'password' => $databaseUrlConfig['password'] ?? env('DB_PASSWORD', ''),
             'charset' => env('DB_CHARSET', 'utf8'),
             'prefix' => '',
             'prefix_indexes' => true,
-            'search_path' => 'public',
-            'sslmode' => 'require',
+            'search_path' => $databaseUrlConfig['search_path'] ?? env('DB_SCHEMA', 'public'),
+            'sslmode' => $sslMode,
             'options' => $pgsqlOptions,
         ],
 

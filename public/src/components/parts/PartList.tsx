@@ -137,10 +137,35 @@ export default function PartList({
     }
   };
 
+  const getSpecsImageUrl = (part: any) => {
+    if (!part) return null;
+    const specs = part.technical_specs;
+    if (!specs) return null;
+    try {
+      const list = typeof specs === 'string' ? JSON.parse(specs) : specs;
+      if (Array.isArray(list)) {
+        for (const s of list) {
+          const item = typeof s === 'string' ? JSON.parse(s) : s;
+          if (item?.key === 'image' || item?.key === '__image_data') {
+            if (typeof item.value === 'string' && (item.value.startsWith('data:') || item.value.startsWith('http'))) {
+              return item.value;
+            }
+          }
+        }
+      } else if (typeof list === 'object') {
+        const val = list.image || list.__image_data;
+        if (typeof val === 'string' && (val.startsWith('data:') || val.startsWith('http'))) {
+          return val;
+        }
+      }
+    } catch {}
+    return null;
+  };
+
   const getImageUrl = (img: any) => {
     if (!img) return null;
     const thumbUrl = img.thumb_url || img.url;
-    if (thumbUrl && typeof thumbUrl === 'string' && !thumbUrl.endsWith('thumb_') && thumbUrl !== '0') return thumbUrl;
+    if (thumbUrl && typeof thumbUrl === 'string' && !thumbUrl.includes('laykenegn.s3') && !thumbUrl.endsWith('thumb_') && thumbUrl !== '0') return thumbUrl;
     const base = axiosClient.defaults.baseURL?.replace(/\/api\/?$/, '') || window.location.origin;
     const raw = String(img.thumb_path || img.file_path || '').trim();
     if (!raw || raw === '0' || raw === 'false' || raw === 'null' || raw.endsWith('thumb_') || raw.endsWith('/thumb_')) return null;
@@ -150,30 +175,12 @@ export default function PartList({
 
   const getPartImageUrl = (part: any) => {
     if (!part) return null;
+    const specsImg = getSpecsImageUrl(part);
+    if (specsImg) return specsImg;
     if (Array.isArray(part.images)) {
       for (const img of part.images) {
         const url = getImageUrl(img);
         if (url) return url;
-      }
-    }
-    const specs = part.technical_specs;
-    if (specs) {
-      if (Array.isArray(specs)) {
-        for (const s of specs) {
-          try {
-            const parsed = typeof s === 'string' ? JSON.parse(s) : s;
-            if (parsed?.key === '__image_data' || parsed?.key === 'image') {
-              if (typeof parsed?.value === 'string' && (parsed.value.startsWith('data:image/') || parsed.value.startsWith('http'))) {
-                return parsed.value;
-              }
-            }
-          } catch {}
-        }
-      } else if (typeof specs === 'object') {
-        const val = specs.__image_data || specs.image;
-        if (typeof val === 'string' && (val.startsWith('data:image/') || val.startsWith('http'))) {
-          return val;
-        }
       }
     }
     return null;
@@ -365,7 +372,12 @@ export default function PartList({
                               className="w-full h-full object-cover"
                               alt={p.name || "Part image"}
                               onError={(e) => {
-                                (e.currentTarget as HTMLElement).style.display = 'none';
+                                const specsImg = getSpecsImageUrl(p);
+                                if (specsImg && e.currentTarget.src !== specsImg) {
+                                  e.currentTarget.src = specsImg;
+                                } else {
+                                  (e.currentTarget as HTMLElement).style.display = 'none';
+                                }
                               }}
                             />
                           ) : (

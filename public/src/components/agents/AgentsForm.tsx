@@ -39,17 +39,7 @@ const AgentsForm: React.FC<AgentsFormProps> = ({ agent, onSuccess }) => {
       <input {...register('phone')} placeholder="Phone Number" className="border p-2 rounded w-full" />
       <input {...register('address')} placeholder="Address" className="border p-2 rounded w-full" />
       
-      <button>
-
-
-      </button>
-      <button  type='submit' className='bg-blue-200'>f..
-
-      </button>
-        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
-        {agent ? 'Update Agent' : 'Add Agent'}
-      </button>
-      <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
+      <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-lg shadow-sm transition-colors duration-150">
         {agent ? 'Update Agent' : 'Add Agent'}
       </button>
     </form>

@@ -11,6 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::dropIfExists('sale_items');
+        Schema::dropIfExists('sales');
+
         Schema::create('sales', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('order_number')->unique();
@@ -31,7 +34,7 @@ return new class extends Migration
         Schema::create('sale_items', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('sale_id');
-            $table->uuid('part_item_id');
+            $table->uuid('part_item_id')->nullable();
             $table->uuid('part_id');
             $table->integer('qty')->default(1);
             $table->decimal('unit_price', 15, 2);

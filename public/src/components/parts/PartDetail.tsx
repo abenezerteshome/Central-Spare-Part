@@ -40,7 +40,7 @@ const PartDetail: React.FC<PartDetailProps> = ({ partId }) => {
   const getImageUrl = (img: any) => {
     if (!img) return '';
     const thumbUrl = img.thumb_url || img.url;
-    if (thumbUrl && typeof thumbUrl === 'string' && !thumbUrl.endsWith('thumb_') && thumbUrl !== '0') return thumbUrl;
+    if (thumbUrl && typeof thumbUrl === 'string' && !thumbUrl.includes('laykenegn.s3') && !thumbUrl.endsWith('thumb_') && thumbUrl !== '0') return thumbUrl;
     const path = String(img.thumb_path || img.file_path || img.path || '').trim();
     if (!path || path === '0' || path === 'false' || path.endsWith('thumb_') || path.endsWith('/thumb_')) return '';
     if (/^(https?:\/\/|data:image\/)/i.test(path)) return path;
