@@ -16,7 +16,7 @@ class ActivityLogController extends Controller
      */
     public function index(Request $request)
     {
-        $query = ActivityLog::with(['actor:id,name,email,role,profile_url,phone'])
+        $query = ActivityLog::with(['actor:id,name,email,role'])
             ->latest('created_at');
 
         // Global Search
@@ -110,7 +110,7 @@ class ActivityLogController extends Controller
      */
     public function show($id)
     {
-        $log = ActivityLog::with(['actor:id,name,email,role,profile_url,phone'])
+        $log = ActivityLog::with(['actor:id,name,email,role'])
             ->findOrFail($id);
 
         return $this->success($log);

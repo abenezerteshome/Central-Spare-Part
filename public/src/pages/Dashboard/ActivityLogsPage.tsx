@@ -210,7 +210,7 @@ const ActivityLogsPage: React.FC = () => {
   const fetchStats = async () => {
     try {
       const res = await axiosClient.get(endpoints.ACTIVITY_LOGS.STATS);
-      if (res.data?.success && res.data?.data) {
+      if (res.data?.data) {
         setStats(res.data.data);
       }
     } catch (err) {
